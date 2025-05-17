@@ -1,60 +1,46 @@
 
-let selectedTransactionId = null;
+document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const date = document.getElementById('date').value;
+  const type = document.getElementById('type').value;
+  const category = document.getElementById('category').value;
+  const amount = parseFloat(document.getElementById('amount').value);
 
-// ফর্ম সাবমিট হ্যান্ডলার  
-    document.getElementById('transactionForm').addEventListener('submit', async (e) => {  
-        e.preventDefault();  
-          
-        const transaction = {  
-            date: document.getElementById('date').value,  
-            type: document.getElementById('type').value,  
-            category: document.getElementById('category').value,  
-            amount: parseFloat(document.getElementById('amount').value),  
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()  
-        };  
+  // Firestore-এ ডেটা সংরক্ষণ
+  await db.collection('transactions').add({
+    date,
+    type,
+    category,
+    amount,
+    userId: currentUser.uid,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
-        try {  
-            if(selectedTransactionId) {  
-                // এডিট মোড  
-                await db.collection('transactions').doc(selectedTransactionId).update(transaction);  
-                selectedTransactionId = null;  
-            } else {  
-                // নতুন লেনদেন যোগ করুন  
-                await db.collection('transactions').add(transaction);  
-            }  
-            document.getElementById('transactionForm').reset();  
-        } catch (error) {  
-            console.error("ত্রুটি:", error);  
-        }  
-    });  
+  // ফর্ম রিসেট করুন
+  e.target.reset();
+});
+const calculateSummary = async () => {
+  const snapshot = await db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .get();
 
-    // সামারি আপডেট ফাংশন  
-    const updateSummary = async () => {  
-        const incomeSnapshot = await db.collection('transactions')  
-            .where('type', '==', 'income')  
-            .get();  
-        const expenseSnapshot = await db.collection('transactions')  
-            .where('type', '==', 'expense')  
-            .get();  
+  let totalIncome = 0;
+  let totalExpense = 0;
 
-        // মোট হিসাব  
-        const totalIncome = incomeSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);  
-        const totalExpense = expenseSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);  
-        const balance = totalIncome - totalExpense;  
-        const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(2) : 0;  
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.type === 'income') totalIncome += data.amount;
+    if (data.type === 'expense') totalExpense += data.amount;
+  });
 
-        // DOM আপডেট  
-        document.getElementById('total-income').textContent = `৳${totalIncome}`;  
-        document.getElementById('total-expense').textContent = `৳${totalExpense}`;  
-        document.getElementById('total-balance').textContent = `৳${balance}`;  
-        document.getElementById('savingsRate').textContent = `${savingsRate}%`;  
-        document.getElementById('savingsAmount').textContent = `৳${balance}`;  
-    };  
+  const totalBalance = totalIncome - totalExpense;
+  const savingsRate = ((totalBalance / totalIncome) * 100 || 0).toFixed(1);
 
-// রিয়েল-টাইম আপডেট  
-    db.collection('transactions').onSnapshot(() => {  
-        updateSummary();  
-    loadTransactions();  
-    });
-
-
+  // DOM আপডেট করুন
+  document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+  document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+  document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+  document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+  document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+};
