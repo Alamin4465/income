@@ -27,45 +27,31 @@ let selectedTransactionId = null;
                 console.error("Error saving transaction: ", error);
             }
         });
-	const updateSummary = async () => {
-    try {
-        // মোট আয় হিসাব
-        const incomeQuery = await db.collection('transactions')
-            .where('type', '==', 'income')
-            .get();
-        const totalIncome = incomeQuery.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
-        // মোট ব্যয় হিসাব
-        const expenseQuery = await db.collection('transactions')
-            .where('type', '==', 'expense')
-            .get();
-        const totalExpense = expenseQuery.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+        // সঞ্চয় হিসাব আপডেট করুন
+        const refreshSavings = async () => {
+            const incomeSnapshot = await db.collection('transactions')
+                .where('type', '==', 'income')
+                .get();
+            const expenseSnapshot = await db.collection('transactions')
+                .where('type', '==', 'expense')
+                .get();
 
-        // বর্তমান ব্যালেন্স
-        const currentBalance = totalIncome - totalExpense;
+            const totalIncome = incomeSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+            const totalExpense = expenseSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+            const savings = totalIncome - totalExpense;
+            const savingsRate = totalIncome > 0 ? ((savings / totalIncome) * 100).toFixed(2) : 0;
 
-        // সঞ্চয় হার (%) 
-        const savingsRate = totalIncome > 0 
-            ? ((currentBalance / totalIncome) * 100).toFixed(2) 
-            : 0;
+            document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+            document.getElementById('savingsAmount').textContent = `৳${savings}`;
+        };
 
-        // DOM আপডেট
-        document.getElementById('total-income').textContent = `৳${totalIncome}`;
-        document.getElementById('total-expense').textContent = `৳${totalExpense}`;
-        document.getElementById('total-balance').textContent = `৳${currentBalance}`;
-        document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-        document.getElementById('savingsAmount').textContent = `৳${currentBalance}`;
+        // রিয়েল-টাইম আপডেটের জন্য লিসেনার যোগ করুন
+        db.collection('transactions').onSnapshot(() => {
+            loadTransactions();
+            refreshSavings();
+        });
 
-    } catch (error) {
-        console.error("সামারি লোডে সমস্যা:", error);
-    }
-};
-
-// সমস্ত ট্রানজ্যাকশন চেঞ্জ লিসেনার
-db.collection('transactions').onSnapshot(() => {
-    loadTransactions();
-    updateSummary(); // সামারি আপডেট যোগ করুন
-});
-
-// প্রাথমিক আপডেট
-updateSummary();
+        // প্রাথমিক লোড
+        loadTransactions();
+        refreshSavings();
