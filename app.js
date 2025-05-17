@@ -28,54 +28,7 @@ let selectedTransactionId = null;
             }
         });
 
-        // লেনদেন লোড এবং ডিসপ্লে করুন
-        const loadTransactions = async () => {
-            const querySnapshot = await db.collection('transactions').orderBy('timestamp', 'desc').get();
-            const transactionsList = document.getElementById('transactionsList');
-            transactionsList.innerHTML = '';
-
-            querySnapshot.forEach((doc) => {
-                const transaction = doc.data();
-                const transactionItem = document.createElement('div');
-                transactionItem.className = 'transaction-item';
-                transactionItem.innerHTML = `
-                    <div>
-                        <strong>তারিখ:</strong> ${transaction.date} |
-                        <strong>ধরন:</strong> ${transaction.type} |
-                        <strong>ক্যাটাগরি:</strong> ${transaction.category} |
-                        <strong>পরিমাণ:</strong> ৳${transaction.amount}
-                    </div>
-                    <div>
-                        <button class="edit-btn" onclick="editTransaction('${doc.id}')">এডিট</button>
-                        <button class="delete-btn" onclick="deleteTransaction('${doc.id}')">ডিলিট</button>
-                    </div>
-                `;
-                transactionsList.appendChild(transactionItem);
-            });
-        };
-
-        // লেনদেন এডিট করুন
-        window.editTransaction = async (id) => {
-            const doc = await db.collection('transactions').doc(id).get();
-            const transaction = doc.data();
-            
-            document.getElementById('date').value = transaction.date;
-            document.getElementById('type').value = transaction.type;
-            document.getElementById('category').value = transaction.category;
-            document.getElementById('amount').value = transaction.amount;
-            
-            selectedTransactionId = id;
-        };
-
-        // লেনদেন ডিলিট করুন
-        window.deleteTransaction = async (id) => {
-            if(confirm("আপনি কি এই লেনদেন ডিলিট করতে চান?")) {
-                await db.collection('transactions').doc(id).delete();
-                await loadTransactions();
-                await refreshSavings();
-            }
-        };
-
+        
         // সঞ্চয় হিসাব আপডেট করুন
         const refreshSavings = async () => {
             const incomeSnapshot = await db.collection('transactions')
