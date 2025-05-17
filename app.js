@@ -70,3 +70,36 @@ const renderTransactions = () => {
     </div>
   `).join('');
 };
+
+const deleteTransaction = async (id) => {
+  await db.collection('transactions').doc(id).delete();
+};
+const showSpecificMonth = async (month) => {
+  const snapshot = await db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .where('date', '>=', `2023-${month}-01`)
+    .where('date', '<=', `2023-${month}-31`)
+    .get();
+
+  // ফিল্টার্ড ডেটা রেন্ডার করুন
+};const updateCharts = () => {
+  // ক্যাটেগরি অনুযায়ী ডেটা প্রস্তুত করুন
+  const categories = {};
+  transactions.forEach(t => {
+    if (t.type === 'expense') {
+      categories[t.category] = (categories[t.category] || 0) + t.amount;
+    }
+  });
+
+  // চার্ট রেন্ডার করুন
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(categories),
+      datasets: [{
+        data: Object.values(categories),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+      }]
+    }
+  });
+};
