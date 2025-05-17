@@ -48,12 +48,50 @@
             document.getElementById('savingsAmount').textContent = `৳${savings}`;
         };
 
+
+// সামারি আপডেট ফাংশন
+const updateSummary = async () => {
+    try {
+        // মোট আয় হিসাব
+        const incomeSnapshot = await db.collection('transactions')
+            .where('type', '==', 'income')
+            .get();
+        const totalIncome = incomeSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+
+        // মোট ব্যয় হিসাব
+        const expenseSnapshot = await db.collection('transactions')
+            .where('type', '==', 'expense')
+            .get();
+        const totalExpense = expenseSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+
+        // বর্তমান ব্যালেন্স
+        const currentBalance = totalIncome - totalExpense;
+
+        // সঞ্চয় হিসাব
+        const savingsRate = totalIncome > 0 
+            ? ((currentBalance / totalIncome) * 100).toFixed(2) 
+            : 0;
+
+        // DOM আপডেট
+        document.getElementById('total-income').textContent = `৳${totalIncome}`;
+        document.getElementById('total-expense').textContent = `৳${totalExpense}`;
+        document.getElementById('total-balance').textContent = `৳${currentBalance}`;
+        document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+        document.getElementById('savingsAmount').textContent = `৳${currentBalance}`;
+
+    } catch (error) {
+        console.error("সামারি লোডে ত্রুটি:", error);
+    }
+};
+
         // রিয়েল-টাইম আপডেটের জন্য লিসেনার যোগ করুন
         db.collection('transactions').onSnapshot(() => {
             loadTransactions();
             refreshSavings();
+            updateSummary();
         });
 
         // প্রাথমিক লোড
         loadTransactions();
         refreshSavings();
+         updateSummary();
