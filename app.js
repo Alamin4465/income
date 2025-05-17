@@ -1,38 +1,34 @@
 let transactions = [];
 let currentUser = null;
 
-// ইউজার লগইন স্টেট ট্র্যাক করুন
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = user;
-    loadTransactions();
-    updateWelcomeMessage(user.email);
-  } else {
-    window.location.href = "login.html"; // লগইন পেজে রিডাইরেক্ট
-  }
-});
-
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const date = document.getElementById('date').value;
-  const type = document.getElementById('type').value;
-  const category = document.getElementById('category').value;
-  const amount = parseFloat(document.getElementById('amount').value);
+            e.preventDefault();
+            
+            const transaction = {
+                date: document.getElementById('date').value,
+                type: document.getElementById('type').value,
+                category: document.getElementById('category').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-  // Firestore-এ ডেটা সংরক্ষণ
-  await db.collection('transactions').add({
-    date,
-    type,
-    category,
-    amount,
-    userId: currentUser.uid,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
+            try {
+                if(selectedTransactionId) {
+                    // এডিট মোড
+                    await db.collection('transactions').doc(selectedTransactionId).update(transaction);
+                    selectedTransactionId = null;
+                } else {
+                    // নতুন লেনদেন যোগ করুন
+                    await db.collection('transactions').add(transaction);
+                }
+                document.getElementById('transactionForm').reset();
+                await refreshSavings();
+            } catch (error) {
+                console.error("Error saving transaction: ", error);
+            }
+        });
 
-  // ফর্ম রিসেট করুন
-  e.target.reset();
-});
+
 const calculateSummary = async () => {
   const snapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
@@ -57,3 +53,8 @@ const calculateSummary = async () => {
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
+
+db.collection('transactions').onSnapshot(() => {
+            loadTransactions();
+            refreshSavings();
+        });
