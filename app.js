@@ -1,4 +1,5 @@
-let selectedTransactionId = null;
+let transactions = [];
+let currentUser = null;
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
