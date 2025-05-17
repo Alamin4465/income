@@ -7,7 +7,6 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
   const type = document.getElementById('type').value;
   const category = document.getElementById('category').value;
   const amount = parseFloat(document.getElementById('amount').value);
-  const timestamp= firebase.firestore.FieldValue.serverTimestamp() ;
   // Firestore-এ ডেটা সংরক্ষণ
   await db.collection('transactions').add({
     date,
