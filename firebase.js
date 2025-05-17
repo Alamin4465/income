@@ -12,7 +12,3 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-
-// রিয়েলটাইম ডেটা ট্র্যাকিং
-let transactions = [];
-let currentUser = null;
