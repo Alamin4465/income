@@ -44,3 +44,35 @@ const calculateSummary = async () => {
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
+
+// script.js বা app.js ফাইলে এই কোড যোগ করুন
+const incomeCategories = ["বেতন", "ব্যবসা", "অন্যান্য"];
+const expenseCategories = [
+    "বাসা ভাড়া", "মোবাইল রিচার্জ", "বিদ্যুৎ বিল", 
+    "পরিবহন", "দোকান বিল", "কেনাকাটা", "গাড়ির খরচ", 
+    "কাচা বাজার", "বাড়ি", "হাস্পাতাল", "ব্যক্তিগত", "অন্যান্য"
+];
+
+// পেজ লোড হওয়ার পর ক্যাটাগরি আপডেট করুন
+document.addEventListener('DOMContentLoaded', () => {
+    updateCategories();
+});
+
+// টাইপ পরিবর্তন হলে ক্যাটাগরি আপডেট করার ফাংশন
+function updateCategories() {
+    const type = document.getElementById('type').value;
+    const categorySelect = document.getElementById('category');
+    
+    // বর্তমান অপশনগুলি মুছুন (প্রথম অপশন বাদে)
+    categorySelect.innerHTML = '<option value="">ক্যাটাগরি নির্বাচন করুন</option>';
+    
+    // সংশ্লিষ্ট ক্যাটাগরি যোগ করুন
+    const categories = (type === 'income') ? incomeCategories : expenseCategories;
+    
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+    });
+}
