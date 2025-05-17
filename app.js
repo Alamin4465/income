@@ -1,3 +1,4 @@
+let selectedTransactionId = null;
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
