@@ -44,3 +44,29 @@ const calculateSummary = async () => {
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
+
+const loadTransactions = () => {
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot(snapshot => {
+      transactions = [];
+      snapshot.forEach(doc => {
+        transactions.push({ id: doc.id, ...doc.data() });
+      });
+      renderTransactions();
+      calculateSummary();
+    });
+};
+
+const renderTransactions = () => {
+  const transactionsList = document.getElementById('transactionsList');
+  transactionsList.innerHTML = transactions.map(transaction => `
+    <div class="transaction-item ${transaction.type}">
+      <span>${transaction.date}</span>
+      <span>${transaction.category}</span>
+      <span>৳ ${transaction.amount.toLocaleString('bn-BD')}</span>
+      <button onclick="deleteTransaction('${transaction.id}')">মুছুন</button>
+    </div>
+  `).join('');
+};
