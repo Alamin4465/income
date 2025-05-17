@@ -27,8 +27,24 @@ let selectedTransactionId = null;
                 console.error("Error saving transaction: ", error);
             }
         });
+	// সামারি
+	const updateSummary = async () => {
+    try {
+        // মোট আয় হিসাব
+        const incomeQuery = await db.collection('transactions')
+            .where('type', '==', 'income')
+            .get();
+        const totalIncome = incomeQuery.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
-        
+        // মোট ব্যয় হিসাব
+        const expenseQuery = await db.collection('transactions')
+            .where('type', '==', 'expense')
+            .get();
+        const totalExpense = expenseQuery.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+
+ 
+
+       
         // সঞ্চয় হিসাব আপডেট করুন
         const refreshSavings = async () => {
             const incomeSnapshot = await db.collection('transactions')
