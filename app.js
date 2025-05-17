@@ -1,4 +1,5 @@
-let selectedTransactionId = null;
+ // নির্বাচিত লেনদেন ট্র্যাক করার জন্য ভেরিয়েবল
+        let selectedTransactionId = null;
 
         // ফর্ম সাবমিট হ্যান্ডলার
         document.getElementById('transactionForm').addEventListener('submit', async (e) => {
@@ -27,6 +28,7 @@ let selectedTransactionId = null;
                 console.error("Error saving transaction: ", error);
             }
         });
+
 
         // সঞ্চয় হিসাব আপডেট করুন
         const refreshSavings = async () => {
