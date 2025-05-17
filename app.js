@@ -1,4 +1,3 @@
-
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -20,6 +19,7 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
   // ফর্ম রিসেট করুন
   e.target.reset();
 });
+
 const calculateSummary = async () => {
   const snapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
