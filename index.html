@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আয়-ব্যয় ব্যবস্থাপনা</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+</head>
+<body>
+    <div class="header">
+        <div class="welcome" id="welcomeMessage"></div>
+        <button class="logout-btn" onclick="logout()">লগআউট</button>
+    </div>
+
+    <!-- হেডার সেকশন -->
+    <div class="header-box">
+        <h1>আয়-ব্যয় ব্যবস্থাপনা সিস্টেম</h1>
+        <p>লেনদেনের হিসাব সংরক্ষণ করুন</p>
+    </div>
+
+    <!-- সামারি কার্ড -->
+    <div class="summary-container">
+        <div class="summary-card">
+            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135679.png" class="summary-icon" alt="আয়">
+            <h3>মোট আয়</h3>
+            <p id="total-income">৳ ০</p>
+        </div>
+
+        <div class="summary-card">
+            <img src="https://cdn-icons-png.flaticon.com/128/992/992700.png" class="summary-icon" alt="ব্যয়">
+            <h3>মোট ব্যয়</h3>
+            <p id="total-expense">৳ ০</p>
+        </div>
+
+        <div class="summary-card">
+            <img src="https://cdn-icons-png.flaticon.com/128/3135/3135686.png" class="summary-icon" alt="ব্যালেন্স">
+            <h3>বর্তমান ব্যালেন্স</h3>
+            <p id="total-balance">৳ ০</p>
+        </div>
+    </div>
+
+    <!-- ফর্ম এবং সঞ্চয় সেকশন -->
+    <div class="form-container">
+        <form id="transactionForm">
+            <input type="date" class="form-input" id="date" required>
+            <select class="form-input" id="type" required>
+                <option value="income">আয়</option>
+                <option value="expense">ব্যয়</option>
+            </select>
+            <select class="form-input" id="category" required>
+                <option value="">ক্যাটাগরি নির্বাচন করুন</option>
+                <option value="বেতন">বেতন</option>
+                <option value="ব্যবসা">ব্যবসা</option>
+                <option value="ঘরোয়া">ঘরোয়া</option>
+                <option value="শিক্ষা">শিক্ষা</option>
+                <option value="অন্যান্য">অন্যান্য</option>
+            </select>
+            <input type="number" class="form-input" id="amount" placeholder="টাকার পরিমাণ লিখুন" required>
+            <button type="submit" class="form-button">লেনদেন সংরক্ষণ করুন</button>
+        </form>
+
+        <!-- সঞ্চয় বক্স -->
+        <div class="savings-box">
+            <h3>মাসিক সঞ্চয়</h3>
+            <div class="savings-percentage" id="savingsRate">০%</div>
+            <div id="savingsAmount">৳ ০</div>
+        </div>
+    </div>
+
+    <!-- লেনদেন তালিকা -->
+    <div class="transaction-container">
+        <h2 class="transaction-header">লেনদেনের হিসাব</h2>
+         <!-- HTML এর ফিল্টার বাটন সেকশন -->
+<div class="transactions-section">
+    <h2>লেনদেনের ইতিহাস</h2>
+    <div id="transactionsList" class="transactions-list"></div>
+</div>
+<!-- লেনদেন তালিকার নিচে এই কোড যোগ করুন -->
+<div class="filter-section">
+    <h2>বিশেষ ফিল্টার</h2>
+    
+    <div class="special-filters">
+        <!-- তারিখ ফিল্টার -->
+        <div class="filter-group">
+            <label for="specificDate">তারিখ নির্বাচন করুন:</label>
+            <input type="date" id="specificDate" onchange="showSpecificDate(this.value)">
+        </div>
+
+        <!-- মাস ফিল্টার -->
+        <div class="filter-group">
+            <label for="specificMonth">মাস নির্বাচন করুন:</label>
+            <select id="specificMonth" onchange="showSpecificMonth(this.value)">
+                <option value="">সব মাস</option>
+                <option value="01">জানুয়ারি</option>
+                <option value="02">ফেব্রুয়ারি</option>
+                <option value="03">মার্চ</option>
+                <option value="04">এপ্রিল</option>
+                <option value="05">মে</option>
+                <option value="06">জুন</option>
+                <option value="07">জুলাই</option>
+                <option value="08">আগস্ট</option>
+                <option value="09">সেপ্টেম্বর</option>
+                <option value="10">অক্টোবর</option>
+                <option value="11">নভেম্বর</option>
+                <option value="12">ডিসেম্বর</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- ফিল্টার ফলাফল টেবিল -->
+    <table class="filtered-results-table">
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th>ধরন</th>
+                <th>ক্যাটাগরি</th>
+                <th>পরিমাণ</th>
+                <th>অবশিষ্ট টাকা</th>
+            </tr>
+        </thead>
+        <tbody id="filteredResultsBody"></tbody>
+        <tfoot id="filteredSummary"></tfoot>
+    </table>
+</div>
+
+    <!-- চার্ট সেকশন -->
+    <div class="chart-container">
+        <div class="chart-box">
+            <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="monthlySummaryChart"></canvas>
+        </div>
+        
+    </div>
+
+    <script src="script.js"></script>
+    <script src="app.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
