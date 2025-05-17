@@ -45,34 +45,42 @@ const calculateSummary = async () => {
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
 
-// script.js বা app.js ফাইলে এই কোড যোগ করুন
-const incomeCategories = ["বেতন", "ব্যবসা", "অন্যান্য"];
-const expenseCategories = [
-    "বাসা ভাড়া", "মোবাইল রিচার্জ", "বিদ্যুৎ বিল", 
-    "পরিবহন", "দোকান বিল", "কেনাকাটা", "গাড়ির খরচ", 
-    "কাচা বাজার", "বাড়ি", "হাস্পাতাল", "ব্যক্তিগত", "অন্যান্য"
-];
-
-// পেজ লোড হওয়ার পর ক্যাটাগরি আপডেট করুন
-document.addEventListener('DOMContentLoaded', () => {
-    updateCategories();
-});
-
-// টাইপ পরিবর্তন হলে ক্যাটাগরি আপডেট করার ফাংশন
-function updateCategories() {
-    const type = document.getElementById('type').value;
-    const categorySelect = document.getElementById('category');
-    
-    // বর্তমান অপশনগুলি মুছুন (প্রথম অপশন বাদে)
-    categorySelect.innerHTML = '<option value="">ক্যাটাগরি নির্বাচন করুন</option>';
-    
-    // সংশ্লিষ্ট ক্যাটাগরি যোগ করুন
-    const categories = (type === 'income') ? incomeCategories : expenseCategories;
-    
-    categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        categorySelect.appendChild(option);
-    });
+Document ID: income
+Fields:
+{
+  items: ["বেতন", "ব্যবসা", "অন্যান্য"]
 }
+Document ID: expense
+Fields:
+{
+  items: ["বাসা ভাড়া", "মোবাইল রিচার্জ", "বিদ্যুৎ বিল", "পরিবহন", "দোকান বিল", "কেনাকাটা", "গাড়ির খরচ", "কাচা বাজার", "বাড়ি", "হাস্পাতাল", "ব্যক্তিগত", "অন্যান্য"]
+}
+// Firestore রেফারেন্স
+const categoriesRef = db.collection("categories");
+
+// আয় ও ব্যয়ের ক্যাটাগরি ভ্যারিয়েবল
+let incomeCategories = [];
+let expenseCategories = [];
+
+// Firebase থেকে ক্যাটাগরি লোড করুন
+const loadCategories = async () => {
+  try {
+    // আয়ের ক্যাটাগরি
+    const incomeDoc = await categoriesRef.doc("income").get();
+    incomeCategories = incomeDoc.data().items;
+
+    // ব্যয়ের ক্যাটাগরি
+    const expenseDoc = await categoriesRef.doc("expense").get();
+    expenseCategories = expenseDoc.data().items;
+
+    // UI আপডেট করুন
+    updateCategories();
+  } catch (error) {
+    console.error("ক্যাটাগরি লোড করতে সমস্যা:", error);
+  }
+};
+
+// পেজ লোড হওয়ার পর ক্যাটাগরি লোড করুন
+document.addEventListener("DOMContentLoaded", () => {
+  loadCategories();
+});
