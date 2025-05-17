@@ -66,22 +66,6 @@ const updateSummary = async () => {
 
         // বর্তমান ব্যালেন্স
         const currentBalance = totalIncome - totalExpense;
-
-        // সঞ্চয় হিসাব
-        const savingsRate = totalIncome > 0 
-            ? ((currentBalance / totalIncome) * 100).toFixed(2) 
-            : 0;
-
-        // DOM আপডেট
-        document.getElementById('total-income').textContent = `৳${totalIncome}`;
-        document.getElementById('total-expense').textContent = `৳${totalExpense}`;
-        document.getElementById('total-balance').textContent = `৳${currentBalance}`;
-        document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-        document.getElementById('savingsAmount').textContent = `৳${currentBalance}`;
-
-    } catch (error) {
-        console.error("সামারি লোডে ত্রুটি:", error);
-    }
 };
 
         // রিয়েল-টাইম আপডেটের জন্য লিসেনার যোগ করুন
