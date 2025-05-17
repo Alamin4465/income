@@ -16,14 +16,3 @@ const auth = firebase.auth();
 // রিয়েলটাইম ডেটা ট্র্যাকিং
 let transactions = [];
 let currentUser = null;
-
-// ইউজার লগইন স্টেট ট্র্যাক করুন
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = user;
-    loadTransactions();
-    updateWelcomeMessage(user.email);
-  } else {
-    window.location.href = "login.html"; // লগইন পেজে রিডাইরেক্ট
-  }
-});
