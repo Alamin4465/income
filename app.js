@@ -1,21 +1,28 @@
-document.getElementById('transactionForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const date = document.getElementById('date').value;
-  const type = document.getElementById('type').value;
-  const category = document.getElementById('category').value;
-  const amount = parseFloat(document.getElementById('amount').value);
+document.getElementById('transactionForm').addEventListener('submit', async (e) => {  
+        e.preventDefault();  
+          
+        const transaction = {  
+            date: document.getElementById('date').value,  
+            type: document.getElementById('type').value,  
+            category: document.getElementById('category').value,  
+            amount: parseFloat(document.getElementById('amount').value),  
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()  
+        };  
 
-  // Firestore-এ ডেটা সংরক্ষণ
-  await db.collection('transactions').add({
-    date,
-    type,
-    category,
-    amount,
-    userId: currentUser.uid,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
+        try {  
+            if(selectedTransactionId) {  
+                // এডিট মোড  
+                await db.collection('transactions').doc(selectedTransactionId).update(transaction);  
+                selectedTransactionId = null;  
+            } else {  
+                // নতুন লেনদেন যোগ করুন  
+                await db.collection('transactions').add(transaction);  
+            }  
+            document.getElementById('transactionForm').reset();  
+        } catch (error) {  
+            console.error("ত্রুটি:", error);  
+        }  
+    });  
   // ফর্ম রিসেট করুন
   e.target.reset();
 });
