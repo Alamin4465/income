@@ -213,20 +213,44 @@ body {
   overflow-x: auto;
 }
 
-/* ফিল্টার বাটন */
+/* বাটন ডিজাইন */
 button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
   padding: 10px 16px;
   margin: 4px;
-  cursor: pointer;
+  border: none;
   border-radius: 5px;
+  cursor: pointer;
   transition: background 0.3s ease;
 }
 
-button:hover {
-  background-color: #388e3c;
+/* ফিল্টার বাটন */
+.filter-button {
+  background-color: #e0e0e0;
+  color: black;
+}
+
+.filter-button.active {
+  background-color: red;
+  color: white;
+}
+
+/* ডিলিট ও এডিট বাটন */
+.delete-btn {
+  background-color: red;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
+.edit-btn {
+  background-color: green;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2e7d32;
 }
 
 /* ডেক্সটপ: টেবিল স্টাইল */
