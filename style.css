@@ -206,6 +206,13 @@ body {
 }
 
 
+/* মূল কন্টেইনার */
+.transactions-section {
+  padding: 20px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* ফিল্টার বাটন */
 button {
   background-color: #4CAF50;
@@ -222,7 +229,7 @@ button:hover {
   background-color: #388e3c;
 }
 
-/* টেবিল */
+/* ডেক্সটপ: টেবিল স্টাইল */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -231,10 +238,8 @@ table {
 }
 
 table thead {
-  background: #007bff;
-    color: white;
-    padding: 16px;
-    font-size: 1.1em;
+  background-color: #f5f5f5;
+  font-weight: bold;
 }
 
 table th, table td {
@@ -273,4 +278,45 @@ table button {
 
 table button:hover {
   background-color: #e64a19;
+}
+
+/* মোবাইল ভিউ: কার্ডে কনভার্ট */
+@media (max-width: 768px) {
+  table {
+    display: none;
+  }
+
+  .transaction-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 10px 0;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .transaction-card span {
+    display: block;
+    margin: 4px 0;
+  }
+
+  .transaction-card .amount {
+    font-weight: bold;
+  }
+
+  .transaction-card.income {
+    border-left: 5px solid green;
+  }
+
+  .transaction-card.expense {
+    border-left: 5px solid red;
+  }
+
+  .transaction-card button {
+    margin-top: 8px;
+    background-color: #ff5722;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
 }
