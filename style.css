@@ -98,7 +98,7 @@ body {
     font-size: 1.05em;
 }
 
-.form-button {
+.form-button{
     background: #007bff;
     color: white;
     padding: 14px;
@@ -110,7 +110,7 @@ body {
     transition: background 0.3s;
 }
 
-.form-button:hover {
+.form-button.active{
     background: #0056b3;
 }
 
