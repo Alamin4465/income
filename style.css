@@ -206,27 +206,17 @@ body {
 }
 
 
-/* মূল কন্টেইনার */
-.transactions-section {
-  padding: 20px;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-/* বাটন ডিজাইন */
-button {
-  padding: 10px 16px;
-  margin: 4px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
 /* ফিল্টার বাটন */
 .filter-button {
-  background-color: #e0e0e0;
-  color: black;
+  background: #007bff;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1em;
+    transition: background 0.3s;
 }
 
 .filter-button.active {
@@ -291,20 +281,6 @@ tr.expense td {
   color: red;
 }
 
-/* অ্যাকশন বাটন */
-table button {
-  padding: 6px 12px;
-  font-size: 14px;
-  margin: 2px;
-  background-color: #ff5722;
-  border: none;
-  color: white;
-  border-radius: 4px;
-}
-
-table button:hover {
-  background-color: #e64a19;
-}
 
 /* মোবাইল ভিউ: কার্ডে কনভার্ট */
 @media (max-width: 768px) {
