@@ -161,3 +161,76 @@ body {
     margin-bottom: 1.8rem;
     font-size: 1.6em;
 }
+/* মূল কন্টেইনার */
+.transactions-section {
+  padding: 20px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ফিল্টার বাটন */
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  margin: 4px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #388e3c;
+}
+
+/* টেবিল */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+table thead {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+table tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* আয় এবং ব্যয়ের আলাদা কালার */
+tr.income td {
+  color: green;
+}
+
+tr.expense td {
+  color: red;
+}
+
+/* অ্যাকশন বাটন */
+table button {
+  padding: 6px 12px;
+  font-size: 14px;
+  margin: 2px;
+  background-color: #ff5722;
+  border: none;
+  color: white;
+  border-radius: 4px;
+}
+
+table button:hover {
+  background-color: #e64a19;
+}
