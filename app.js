@@ -146,6 +146,29 @@ const updateCharts = () => {
   });
 };
 
+const incomeCategories = ['বেতন', 'ব্যবসা', 'অন্যান্য'];
+const expenseCategories = ['বাসা ভাড়া', 'মোবাইল রিচার্জ', 'বিদ্যুৎ বিল', 'পরিবহন', 'দোকান বিল', 'কেনাকাটা', 'গাড়ির খরচ', 'কাচা বাজার', 'বাড়ি', 'হাস্পাতাল', 'ব্যক্তিগত', 'অন্যান্য'];
+
+function updateCategoryOptions() {
+  const type = document.getElementById('type').value;
+  const categorySelect = document.getElementById('category');
+
+  // পুরাতন অপশনগুলো মুছে ফেলি
+  categorySelect.innerHTML = '';
+
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
+
+  categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    categorySelect.appendChild(option);
+  });
+}
+
+// প্রথমবার পেজ লোড হলে ডিফল্ট ক্যাটাগরি সেট
+document.addEventListener('DOMContentLoaded', updateCategoryOptions);
+
 // লগআউট
 window.logout = () => {
   auth.signOut();
