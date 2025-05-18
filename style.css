@@ -335,7 +335,7 @@ button {
     color: white;
 }
 
-.filter-button.active {
+.filter-button:hover{
   background-color: red;
   color: white;
 }
