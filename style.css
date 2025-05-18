@@ -167,6 +167,44 @@ body {
   max-width: 100%;
   overflow-x: auto;
 }
+.welcome {
+            color: #1a73e8;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover {
+            background: #bb2d3b;
+        }
+.error {
+    color: #dc3545;
+    padding: 1rem;
+    background: #ffe7e7;
+    border-radius: 8px;
+}
+/* চার্ট স্টাইল */
+.chart-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 25px;
+    margin: 40px 0;
+}
+
+.chart-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
 
 /* ফিল্টার বাটন */
 button {
