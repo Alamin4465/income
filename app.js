@@ -191,9 +191,35 @@ function updateCategoryOptions() {
     categorySelect.appendChild(option);
   });
 }
+//transactions ডিলেট করুন
 window.deleteTransaction = async (id) => {
   if (confirm("আপনি কি নিশ্চিত যে এই লেনদেন মুছতে চান?")) {
     await db.collection('transactions').doc(id).delete();
+  }
+};
+//transactions এডিট করুন
+
+window.editTransaction = async (id) => {
+  const doc = await db.collection('transactions').doc(id).get();
+  if (!doc.exists) {
+    alert("লেনদেন পাওয়া যায়নি!");
+    return;
+  }
+
+  const data = doc.data();
+
+  const newDate = prompt("তারিখ পরিবর্তন করুন (YYYY-MM-DD):", data.date);
+  const newType = prompt("টাইপ লিখুন (income/expense):", data.type);
+  const newCategory = prompt("ক্যাটাগরি পরিবর্তন করুন:", data.category);
+  const newAmount = prompt("পরিমাণ পরিবর্তন করুন:", data.amount);
+
+  if (newDate && newType && newCategory && newAmount) {
+    await db.collection('transactions').doc(id).update({
+      date: newDate,
+      type: newType,
+      category: newCategory,
+      amount: parseFloat(newAmount)
+    });
   }
 };
 
