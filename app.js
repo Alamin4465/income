@@ -13,17 +13,24 @@ auth.onAuthStateChanged((user) => {
 });
 
 // লেনদেন লোড করুন (রিয়েলটাইম আপডেট)
-const loadTransactions = () => {
-  db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .orderBy('timestamp', 'desc')
-    .onSnapshot((snapshot) => {
-      transactions = [];
-      snapshot.forEach(doc => {
-        transactions.push({ id: doc.id, ...doc.data() });
-      });
-      updateUI();
+const loadTransactions = (filterType = 'all') => {
+  let query = db.collection('transactions')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('timestamp', 'desc');
+
+  if (filterType === 'income') {
+    query = query.where('type', '==', 'income');
+  } else if (filterType === 'expense') {
+    query = query.where('type', '==', 'expense');
+  }
+
+  query.onSnapshot((snapshot) => {
+    transactions = [];
+    snapshot.forEach(doc => {
+      transactions.push({ id: doc.id, ...doc.data() });
     });
+    updateUI();
+  });
 };
 
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
