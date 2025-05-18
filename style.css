@@ -1,3 +1,166 @@
+/* CSS রিসেট */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Kalpurush', Arial, sans-serif;
+    font-size: 1.05em;
+}
+
+/* মূল বডি স্টাইল */
+body {
+    background: #f0f8ff;
+    padding: 25px;
+    color: #2c3e50;
+    line-height: 1.7;
+}
+
+/* হেডার স্টাইল */
+.header-box {
+    background: #007bff;
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin: 25px 0;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.header-box h1 {
+    font-size: 1.8em;
+    margin-bottom: 0.8rem;
+}
+
+.header-box p {
+    font-size: 1.3em;
+}
+
+/* সামারি কার্ড */
+.summary-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 35px 0;
+    flex-wrap: wrap;
+}
+
+.summary-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 280px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.summary-icon {
+    width: 65px;
+    height: 65px;
+    margin-bottom: 20px;
+}
+
+.summary-card h3 {
+    color: #007bff;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+}
+
+.summary-card p {
+    font-size: 1.7em;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* ফর্ম সেকশন */
+.form-container {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    align-items: flex-start;
+    margin: 40px 0;
+    height: 400px
+}
+
+#transactionForm {
+    flex: 0 1 500px;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    font-size: 1.05em;
+}
+
+.form-button {
+    background: #007bff;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1em;
+    transition: background 0.3s;
+}
+
+.form-button:hover {
+    background: #0056b3;
+}
+
+/* সঞ্চয় বক্স */
+.savings-box {
+    background: #e8f5e9;
+    width: 360px;
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 2px solid #a5d6a7;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    margin: 0 auto;
+    height: 100%;
+}
+
+.savings-box h3 {
+    font-size: 1.6em;
+    margin-bottom: 1.2rem;
+    color: #1b5e20;
+}
+
+.savings-percentage {
+    font-size: 2.3em;
+    color: #2e7d32;
+    font-weight: 700;
+    margin: 1.5rem 0;
+}
+
+#savingsAmount {
+    font-size: 1.8em;
+    color: #1b5e20;
+    font-weight: 600;
+}
+
+/* লেনদেন কন্টেইনার */
+.transaction-container {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    margin: 40px 0;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+.transaction-header {
+    color: #007bff;
+    text-align: center;
+    margin-bottom: 1.8rem;
+    font-size: 1.6em;
+}
 /* মূল কন্টেইনার */
 .transactions-section {
   padding: 20px;
