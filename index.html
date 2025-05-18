@@ -47,17 +47,12 @@
     <div class="form-container">
         <form id="transactionForm">
             <input type="date" class="form-input" id="date" required>
-            <select class="form-input" id="type" required>
+            <select class="form-input" id="type"onchange="updateCategoryOptions()">
                 <option value="income">আয়</option>
                 <option value="expense">ব্যয়</option>
             </select>
-            <select class="form-input" id="category" required>
+            <select class="form-input" id="category" >
                 <option value="">ক্যাটাগরি নির্বাচন করুন</option>
-                <option value="বেতন">বেতন</option>
-                <option value="ব্যবসা">ব্যবসা</option>
-                <option value="ঘরোয়া">ঘরোয়া</option>
-                <option value="শিক্ষা">শিক্ষা</option>
-                <option value="অন্যান্য">অন্যান্য</option>
             </select>
             <input type="number" class="form-input" id="amount" placeholder="টাকার পরিমাণ লিখুন" required>
             <button type="submit" class="form-button">লেনদেন সংরক্ষণ করুন</button>
