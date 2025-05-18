@@ -238,8 +238,10 @@ table {
 }
 
 table thead {
-  background-color: #f5f5f5;
-  font-weight: bold;
+  background: #007bff;
+    color: white;
+    padding: 16px;
+    font-size: 1.1em;
 }
 
 table th, table td {
