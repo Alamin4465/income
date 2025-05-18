@@ -70,6 +70,11 @@
     <div class="transaction-container">
         <h2 class="transaction-header">লেনদেনের হিসাব</h2>
          <!-- HTML এর ফিল্টার বাটন সেকশন -->
+        <div>
+  <button onclick="loadTransactions('all')">সকল</button>
+  <button onclick="loadTransactions('income')">আয়</button>
+  <button onclick="loadTransactions('expense')">ব্যয়</button>
+</div>
 <div class="transactions-section">
     <h2>লেনদেনের ইতিহাস</h2>
     <div id="transactionsList" class="transactions-list"></div>
