@@ -13,21 +13,17 @@ auth.onAuthStateChanged((user) => {
 });
 
 // লেনদেন লোড করুন (রিয়েলটাইম আপডেট)
-const loadTransactions = (filter = 'all') => {
-  let query = db.collection('transactions')
+const loadTransactions = () => {
+  db.collection('transactions')
     .where('userId', '==', currentUser.uid)
-    .orderBy('timestamp', 'desc');
-
-  query.onSnapshot(snapshot => {
-    transactions = [];
-    snapshot.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      if (filter === 'all' || data.type === filter) {
-        transactions.push(data);
-      }
+    .orderBy('timestamp', 'desc')
+    .onSnapshot((snapshot) => {
+      transactions = [];
+      snapshot.forEach(doc => {
+        transactions.push({ id: doc.id, ...doc.data() });
+      });
+      updateUI();
     });
-    updateUI();
-  });
 };
 
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
@@ -85,75 +81,23 @@ const calculateSummary = () => {
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
 
+// লেনদেন তালিকা দেখান
 const renderTransactions = () => {
   const transactionsList = document.getElementById('transactionsList');
-  
-  if (transactions.length === 0) {
-    transactionsList.innerHTML = "<p>কোনো লেনদেন পাওয়া যায়নি</p>";
-    return;
-  }
-
-  let html = `
-    <table id="transactionsTable">
-  <thead>
-    <tr>
-      <th>তারিখ</th>
-      <th>টাইপ</th>
-      <th>ক্যাটাগরি</th>
-      <th>অ্যামাউন্ট</th>
-      <th>অ্যাকশন</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${transactions.map(t => `
-      <tr class="${t.type}">
-        <td>${t.date}</td>
-        <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-        <td>${t.category}</td>
-        <td>৳ ${t.amount.toLocaleString('bn-BD')}</td>
-        <td>
-          <button class="edit-btn" onclick="editTransaction('${t.id}')">এডিট</button>
-          <button class="delete-btn" onclick="deleteTransaction('${t.id}')">মুছুন</button>
-        </td>
-      </tr>
-    `).join('')}
-  </tbody>
-</table>
-    `;
-  });
-
-  html += `</tbody></table>`;
-  transactionsList.innerHTML = html;
+  transactionsList.innerHTML = transactions.map(transaction => `
+    <div class="transaction-item ${transaction.type}">
+      <span>${transaction.date}</span>
+      <span>${transaction.category}</span>
+      <span>৳ ${transaction.amount.toLocaleString('bn-BD')}</span>
+      <button onclick="deleteTransaction('${transaction.id}')">মুছুন</button>
+    </div>
+  `).join('');
 };
+
+// লেনদেন মুছুন
 window.deleteTransaction = async (id) => {
-  if (confirm("আপনি কি নিশ্চিত যে এই লেনদেন মুছতে চান?")) {
-    await db.collection('transactions').doc(id).delete();
-  }
+  await db.collection('transactions').doc(id).delete();
 };
-window.editTransaction = async (id) => {
-  const doc = await db.collection('transactions').doc(id).get();
-  if (!doc.exists) {
-    alert("লেনদেন পাওয়া যায়নি!");
-    return;
-  }
-
-  const data = doc.data();
-
-  const newDate = prompt("তারিখ পরিবর্তন করুন (YYYY-MM-DD):", data.date);
-  const newType = prompt("টাইপ লিখুন (income/expense):", data.type);
-  const newCategory = prompt("ক্যাটাগরি পরিবর্তন করুন:", data.category);
-  const newAmount = prompt("পরিমাণ পরিবর্তন করুন:", data.amount);
-
-  if (newDate && newType && newCategory && newAmount) {
-    await db.collection('transactions').doc(id).update({
-      date: newDate,
-      type: newType,
-      category: newCategory,
-      amount: parseFloat(newAmount)
-    });
-  }
-};
-
 
 // চার্ট আপডেট
 let categoryChartInstance = null;
@@ -225,14 +169,6 @@ function updateCategoryOptions() {
 // প্রথমবার পেজ লোড হলে ডিফল্ট ক্যাটাগরি সেট
 document.addEventListener('DOMContentLoaded', updateCategoryOptions);
 
-function setFilter(type, button) {
-  loadTransactions(type);
-
-  // সব বাটন থেকে active ক্লাস সরাও
-  document.querySelectorAll('.filter-button').forEach(btn => btn.classList.remove('active'));
-  // যেটি ক্লিক হয়েছে তাকে active করো
-  button.classList.add('active');
-}
 // লগআউট
 window.logout = () => {
   auth.signOut();
