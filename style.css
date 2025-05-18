@@ -205,42 +205,27 @@ body {
     box-shadow: 0 3px 12px rgba(0,0,0,0.1);
 }
 
+/* মূল কন্টেইনার */
+.transactions-section {
+  padding: 20px;
+  max-width: 100%;
+  overflow-x: auto;
+}
 
 /* ফিল্টার বাটন */
-.filter-button {
-  background: #007bff;
-    color: white;
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    width: 50px;
-    font-size: 1.1em;
-    transition: background 0.3s;
-}
-
-.filter-button.active {
-  background-color: red;
+button {
+  background-color: #4CAF50;
   color: white;
+  border: none;
+  padding: 10px 16px;
+  margin: 4px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s ease;
 }
 
-/* ডিলিট ও এডিট বাটন */
-.delete-btn {
-  background-color: red;
-  color: white;
-}
-
-.delete-btn:hover {
-  background-color: #c62828;
-}
-
-.edit-btn {
-  background-color: green;
-  color: white;
-}
-
-.edit-btn:hover {
-  background-color: #2e7d32;
+button:hover {
+  background-color: #388e3c;
 }
 
 /* ডেক্সটপ: টেবিল স্টাইল */
@@ -252,10 +237,8 @@ table {
 }
 
 table thead {
-  background: #007bff;
-    color: white;
-    padding: 16px;
-    font-size: 1.1em;
+  background-color: #f5f5f5;
+  font-weight: bold;
 }
 
 table th, table td {
@@ -281,6 +264,20 @@ tr.expense td {
   color: red;
 }
 
+/* অ্যাকশন বাটন */
+table button {
+  padding: 6px 12px;
+  font-size: 14px;
+  margin: 2px;
+  background-color: #ff5722;
+  border: none;
+  color: white;
+  border-radius: 4px;
+}
+
+table button:hover {
+  background-color: #e64a19;
+}
 
 /* মোবাইল ভিউ: কার্ডে কনভার্ট */
 @media (max-width: 768px) {
@@ -321,4 +318,43 @@ tr.expense td {
     padding: 6px 12px;
     border-radius: 4px;
   }
+}
+/* বাটন ডিজাইন */
+button {
+  padding: 10px 16px;
+  margin: 4px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+/* ফিল্টার বাটন */
+.filter-button {
+  background: #007bff;
+    color: white;
+}
+
+.filter-button.active {
+  background-color: red;
+  color: white;
+}
+
+/* ডিলিট ও এডিট বাটন */
+.delete-btn {
+  background-color: red;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
+.edit-btn {
+  background-color: green;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2e7d32;
 }
