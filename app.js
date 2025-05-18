@@ -94,31 +94,31 @@ const renderTransactions = () => {
   }
 
   let html = `
-    <table border="1" cellspacing="0" cellpadding="5">
-      <thead>
-        <tr>
-          <th>তারিখ</th>
-          <th>টাইপ</th>
-          <th>ক্যাটাগরি</th>
-          <th>পরিমাণ</th>
-          <th>একশন</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  transactions.forEach(t => {
-    html += `
+    <table id="transactionsTable">
+  <thead>
+    <tr>
+      <th>তারিখ</th>
+      <th>টাইপ</th>
+      <th>ক্যাটাগরি</th>
+      <th>অ্যামাউন্ট</th>
+      <th>অ্যাকশন</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${transactions.map(t => `
       <tr class="${t.type}">
         <td>${t.date}</td>
         <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
         <td>${t.category}</td>
         <td>৳ ${t.amount.toLocaleString('bn-BD')}</td>
         <td>
-          <button onclick="editTransaction('${t.id}')">এডিট</button>
-          <button onclick="deleteTransaction('${t.id}')">মুছুন</button>
+          <button class="edit-btn" onclick="editTransaction('${t.id}')">এডিট</button>
+          <button class="delete-btn" onclick="deleteTransaction('${t.id}')">মুছুন</button>
         </td>
       </tr>
+    `).join('')}
+  </tbody>
+</table>
     `;
   });
 
@@ -225,6 +225,14 @@ function updateCategoryOptions() {
 // প্রথমবার পেজ লোড হলে ডিফল্ট ক্যাটাগরি সেট
 document.addEventListener('DOMContentLoaded', updateCategoryOptions);
 
+function setFilter(type, button) {
+  loadTransactions(type);
+
+  // সব বাটন থেকে active ক্লাস সরাও
+  document.querySelectorAll('.filter-button').forEach(btn => btn.classList.remove('active'));
+  // যেটি ক্লিক হয়েছে তাকে active করো
+  button.classList.add('active');
+}
 // লগআউট
 window.logout = () => {
   auth.signOut();
