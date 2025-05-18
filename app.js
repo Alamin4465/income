@@ -1,10 +1,4 @@
-// app.js ফাইলে এই কোড যোগ করুন
-// Firebase ইন্সট্যান্স ইনিশিয়ালাইজ করুন
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
 
-let currentUser = null;
 let transactions = [];
 
 // ইউজার লগইন স্টেট চেক করুন
@@ -32,16 +26,21 @@ const loadTransactions = () => {
     });
 };
 
-// ফর্ম সাবমিট হ্যান্ডলার
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("ইউজার লগইন করা নেই!");
+    return;
+  }
+
   const transaction = {
     date: document.getElementById('date').value,
     type: document.getElementById('type').value,
     category: document.getElementById('category').value,
     amount: parseFloat(document.getElementById('amount').value),
-    userId: currentUser.uid,
+    userId: user.uid,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
 
@@ -50,6 +49,7 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     e.target.reset();
   } catch (error) {
     console.error("ত্রুটি:", error);
+    alert("লেনদেন জমা দিতে সমস্যা হচ্ছে: " + error.message);
   }
 });
 
