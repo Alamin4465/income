@@ -96,21 +96,26 @@ function clearFilters() {
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
   tbody.innerHTML = '';
-  let balance = 0;
 
   data.forEach(t => {
-    const tDate = t.timestamp.toDate().toLocaleDateString('bn-BD'); // বাংলা তারিখ
+    const dateObj = t.timestamp.toDate();
+    // dd-mm-yy ফরম্যাটে তারিখ
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = String(dateObj.getFullYear()).slice(-2);
+    const formattedDate = `${day}-${month}-${year}`;
+
+    // আয় বা ব্যয়ের পরিমাণ এবং মোট (আয় - ব্যয়)
     const income = t.type === 'income' ? Number(t.amount) : 0;
     const expense = t.type === 'expense' ? Number(t.amount) : 0;
-
-    balance += income - expense;
+    const balance = income - expense;
 
     tbody.innerHTML += `
       <tr>
-        <td>${tDate}</td>
+        <td>${formattedDate}</td>
         <td>${t.description || ''}</td>
-        <td>${income ? income : ''}</td>
-        <td>${expense ? expense : ''}</td>
+        <td>${income > 0 ? income : ''}</td>
+        <td>${expense > 0 ? expense : ''}</td>
         <td>${balance}</td>
       </tr>
     `;
