@@ -78,10 +78,19 @@
 <div class="transactions-section">
     <div id="transactionsList" class="transactions-list"></div>
 </div>
-    <div>    <input type="date" id="dateFilter">
-<input type="month" id="monthFilter">
-<button onclick="clearFilters()">Clear</button>
-<table id="transactionTable" border="1" style="margin-top: 10px; border-collapse: collapse;">
+<!-- লেনদেন তালিকার নিচে এই কোড যোগ করুন -->
+<div class="filter-section">
+    <h2>বিশেষ ফিল্টার</h2>
+    <input type="date" id="dateFilter" />
+    <select id="monthFilter">
+  <option value="">-- মাস বাছাই করুন --</option>
+  <option value="2025-04">2025-04</option>
+  <option value="2025-05">2025-05</option>
+</select>
+
+<div id="summary"></div>
+
+<table id="transactionTable">
   <thead>
     <tr>
       <th>তারিখ</th>
@@ -91,8 +100,8 @@
     </tr>
   </thead>
   <tbody></tbody>
-</table></div>
-<!-- লেনদেন তালিকার নিচে এই কোড যোগ করুন -->
+</table>
+</div>
     <!-- চার্ট সেকশন -->
     <div class="chart-container">
         <div class="chart-box">
