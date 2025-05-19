@@ -1,4 +1,3 @@
-
 const allTransactions = [
   { date: '2025-05-01', type: 'income', category: 'বেতন', amount: 10000 },
   { date: '2025-05-03', type: 'expense', category: 'খাবার', amount: 2000 },
@@ -9,7 +8,7 @@ const allTransactions = [
 
 function showSpecificDate(dateStr) {
   const filtered = allTransactions.filter(t => t.date === dateStr);
-  showResult(filtered, 0);
+  showResult(filtered, 0, `তারিখ: ${dateStr}`);
 }
 
 function showSpecificMonth(monthStr) {
@@ -19,7 +18,7 @@ function showSpecificMonth(monthStr) {
 
   const filtered = allTransactions.filter(t => {
     const d = new Date(t.date);
-    return (d.getMonth() + 1 === parseInt(monthStr)) && d.getFullYear() === year;
+    return (String(d.getMonth() + 1).padStart(2, '0') === monthStr && d.getFullYear() === year);
   });
 
   // আগের মাস হিসাব
@@ -40,10 +39,10 @@ function showSpecificMonth(monthStr) {
     return acc;
   }, 0);
 
-  showResult(filtered, prevBalance);
+  showResult(filtered, prevBalance, `মাস: ${monthStr}`);
 }
 
-function showResult(transactions, prevBalance) {
+function showResult(transactions, prevBalance, label = "") {
   let income = 0;
   let expense = 0;
   let runningBalance = prevBalance;
@@ -53,9 +52,14 @@ function showResult(transactions, prevBalance) {
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
 
+  if (transactions.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5">কোন ডেটা পাওয়া যায়নি</td></tr>`;
+    return;
+  }
+
   transactions.forEach(t => {
     if (t.type === 'income') income += t.amount;
-    else if (t.type === 'expense') expense += t.amount;
+    else expense += t.amount;
 
     runningBalance += t.type === 'income' ? t.amount : -t.amount;
 
@@ -74,7 +78,7 @@ function showResult(transactions, prevBalance) {
 
   tfoot.innerHTML = `
     <tr>
-      <td colspan="2"><strong>সারাংশ</strong></td>
+      <td colspan="2"><strong>${label} সারাংশ</strong></td>
       <td><strong>আয়: ৳${income}</strong></td>
       <td><strong>ব্যয়: ৳${expense}</strong></td>
       <td><strong>মোট: ৳${net}</strong></td>
