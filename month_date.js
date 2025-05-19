@@ -1,3 +1,15 @@
+const db = firebase.firestore();
+let transactions = [];
+let currentUser = null;
+
+// Example: Set currentUser when user logs in
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+  }
+});
+
+// Filter by Date
 async function filterByDate() {
   const selectedDate = document.getElementById('filterDate').value;
   if (!selectedDate || !currentUser) return;
@@ -13,15 +25,12 @@ async function filterByDate() {
     .orderBy('timestamp', 'desc')
     .get();
 
-  transactions = [];
-  snapshot.forEach(doc => {
-    transactions.push({ id: doc.id, ...doc.data() });
-  });
-
+  transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   renderTransactions();
-  calculateSummary(); // শুধু এই দিনের আয়-ব্যয়
+  calculateSummary(); // Only for this day
 }
 
+// Filter by Month
 async function filterByMonth() {
   const selectedMonth = document.getElementById('filterMonth').value;
   if (selectedMonth === '' || !currentUser) return;
@@ -30,7 +39,7 @@ async function filterByMonth() {
   const start = new Date(year, selectedMonth, 1);
   const end = new Date(year, parseInt(selectedMonth) + 1, 1);
 
-  // বর্তমান মাসের ডেটা আনো
+  // Get current month's data
   const currentSnapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
@@ -38,12 +47,9 @@ async function filterByMonth() {
     .orderBy('timestamp', 'desc')
     .get();
 
-  const currentMonthData = [];
-  currentSnapshot.forEach(doc => {
-    currentMonthData.push({ id: doc.id, ...doc.data() });
-  });
+  const currentMonthData = currentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  // আগের মাসের শেষ পর্যন্ত মোট ব্যালেন্স হিসাব করো
+  // Get previous balance
   const previousSnapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(start))
@@ -59,9 +65,8 @@ async function filterByMonth() {
 
   const previousBalance = previousIncome - previousExpense;
 
-  // এখন ফিল্টারড ডেটা এবং পুরানো ব্যালেন্স সেট করো
+  // Display current data
   transactions = currentMonthData;
-
   renderTransactions();
 
   const currentIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -74,4 +79,21 @@ async function filterByMonth() {
   document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+}
+
+function renderTransactions() {
+  const tableBody = document.getElementById('transactionTableBody');
+  tableBody.innerHTML = '';
+
+  transactions.forEach((tx, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${tx.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
+      <td>${tx.category || ''}</td>
+      <td>${tx.amount}</td>
+      <td>${new Date(tx.timestamp?.toDate()).toLocaleDateString('bn-BD')}</td>
+    `;
+    tableBody.appendChild(row);
+  });
 }
