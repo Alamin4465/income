@@ -1,71 +1,77 @@
-function filterByDate() {
+async function filterByDate() {
   const selectedDate = document.getElementById('filterDate').value;
-  if (!selectedDate) {
-    alert("অনুগ্রহ করে একটি তারিখ নির্বাচন করুন");
-    return;
-  }
+  if (!selectedDate || !currentUser) return;
 
-  db.collection('transactions')
+  const start = new Date(selectedDate);
+  const end = new Date(selectedDate);
+  end.setDate(end.getDate() + 1);
+
+  const snapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
-    .where('date', '==', selectedDate)
-    .orderBy('date')
-    .get()
-    .then(snapshot => {
-      transactions = [];
-      snapshot.forEach(doc => {
-        transactions.push({ id: doc.id, ...doc.data() });
-      });
-      renderTransactions();
-      calculateSummary();
-    });
+    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
+    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(end))
+    .orderBy('timestamp', 'desc')
+    .get();
+
+  transactions = [];
+  snapshot.forEach(doc => {
+    transactions.push({ id: doc.id, ...doc.data() });
+  });
+
+  renderTransactions();
+  calculateSummary(); // শুধু এই দিনের আয়-ব্যয়
 }
-function filterByMonth() {
+
+async function filterByMonth() {
   const selectedMonth = document.getElementById('filterMonth').value;
-  if (selectedMonth === "") {
-    alert("অনুগ্রহ করে একটি মাস নির্বাচন করুন");
-    return;
-  }
+  if (selectedMonth === '' || !currentUser) return;
 
   const year = new Date().getFullYear();
-  const month = parseInt(selectedMonth);
-  const startDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
-  const endDate = `${year}-${(month + 2).toString().padStart(2, '0')}-01`;
+  const start = new Date(year, selectedMonth, 1);
+  const end = new Date(year, parseInt(selectedMonth) + 1, 1);
 
-  db.collection('transactions')
+  // বর্তমান মাসের ডেটা আনো
+  const currentSnapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
-    .where('date', '>=', startDate)
-    .where('date', '<', endDate)
-    .orderBy('date')
-    .get()
-    .then(snapshot => {
-      transactions = [];
-      let income = 0, expense = 0;
-      snapshot.forEach(doc => {
-        const data = { id: doc.id, ...doc.data() };
-        transactions.push(data);
-        if (data.type === 'income') income += data.amount;
-        else expense += data.amount;
-      });
+    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
+    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(end))
+    .orderBy('timestamp', 'desc')
+    .get();
 
-      // হিসাব করো গত মাস পর্যন্ত ব্যালেন্স
-      let previousBalance = 0;
-      allTransactions.forEach(t => {
-        const d = new Date(t.date);
-        if (d.getFullYear() < year || (d.getFullYear() === year && d.getMonth() < month)) {
-          if (t.type === 'income') previousBalance += t.amount;
-          else previousBalance -= t.amount;
-        }
-      });
+  const currentMonthData = [];
+  currentSnapshot.forEach(doc => {
+    currentMonthData.push({ id: doc.id, ...doc.data() });
+  });
 
-      const balance = previousBalance + income - expense;
-      const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
+  // আগের মাসের শেষ পর্যন্ত মোট ব্যালেন্স হিসাব করো
+  const previousSnapshot = await db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(start))
+    .get();
 
-      renderTransactions();
+  let previousIncome = 0;
+  let previousExpense = 0;
+  previousSnapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.type === 'income') previousIncome += data.amount;
+    else if (data.type === 'expense') previousExpense += data.amount;
+  });
 
-      document.getElementById('total-income').textContent = `৳ ${income.toLocaleString('bn-BD')}`;
-      document.getElementById('total-expense').textContent = `৳ ${expense.toLocaleString('bn-BD')}`;
-      document.getElementById('total-balance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
-      document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-      document.getElementById('savingsAmount').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
-    });
+  const previousBalance = previousIncome - previousExpense;
+
+  // এখন ফিল্টারড ডেটা এবং পুরানো ব্যালেন্স সেট করো
+  transactions = currentMonthData;
+
+  renderTransactions();
+
+  const currentIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const currentExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const totalBalance = previousBalance + currentIncome - currentExpense;
+  const savingsRate = currentIncome > 0 ? ((totalBalance / currentIncome) * 100).toFixed(1) : 0;
+
+  document.getElementById('total-income').textContent = `৳ ${currentIncome.toLocaleString('bn-BD')}`;
+  document.getElementById('total-expense').textContent = `৳ ${currentExpense.toLocaleString('bn-BD')}`;
+  document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+  document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+  document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 }
