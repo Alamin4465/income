@@ -182,3 +182,9 @@ async function loadAllTransactions() {
     handleError(error, 'সমস্ত ডেটা লোড করতে ব্যর্থ!');
   }
 }
+function handleError(error, message) {
+  console.error(error);
+  document.getElementById('filter_summary').innerHTML = `<p class="error">${message}</p>`;
+  document.querySelector('#transactionTable tbody').innerHTML = 
+    '<tr><td colspan="5">ডেটা লোড করতে ব্যর্থ হয়েছে</td></tr>';
+}
