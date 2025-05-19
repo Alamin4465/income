@@ -1,4 +1,4 @@
-<script>
+
 const allTransactions = [
   { date: '2025-05-01', type: 'income', category: 'বেতন', amount: 10000 },
   { date: '2025-05-03', type: 'expense', category: 'খাবার', amount: 2000 },
@@ -81,4 +81,3 @@ function showResult(transactions, prevBalance) {
     </tr>
   `;
 }
-</script>
