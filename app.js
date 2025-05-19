@@ -1,8 +1,16 @@
+/**
+ * Bengali Income-Expense Tracker Web App
+ * Author: আপনার নাম
+ * Description: Firebase ব্যবহার করে ব্যবহারকারীর নির্দিষ্ট আয়-ব্যয় লেনদেন সংরক্ষণ, প্রদর্শন, ফিল্টারিং, চার্ট ও সামারি দেখানোর জন্য মূল স্ক্রিপ্ট।
+ * Date: ২০২৫
+ */
 
+// Global Variables
 let allTransactions = [];
 let transactions = [];
+let currentUser = null;
 
-// ইউজার লগইন স্টেট চেক করুন
+// Auth State Listener
 auth.onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
@@ -13,8 +21,7 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-
-
+// Load Transactions from Firestore
 const loadTransactions = () => {
   db.collection('transactions')
     .where('userId', '==', currentUser.uid)
@@ -25,24 +32,21 @@ const loadTransactions = () => {
         allTransactions.push({ id: doc.id, ...doc.data() });
       });
 
-      // সব ডাটা দিয়ে সামারি ও চার্ট আপডেট
       updateSummaryAndCharts();
-
-      // শুরুতে সকল টেবিল দেখাও
       filterTable('all');
     });
 };
 
-// শুধুমাত্র টেবিল ফিল্টার (UI তে আয়/ব্যয়/সকল দেখানোর জন্য)
+// Filter Table (All / Income / Expense)
 const filterTable = (filterType) => {
-  if (filterType === 'all') {
-    transactions = [...allTransactions];
-  } else {
-    transactions = allTransactions.filter(t => t.type === filterType);
-  }
+  transactions = filterType === 'all'
+    ? [...allTransactions]
+    : allTransactions.filter(t => t.type === filterType);
+
   renderTransactions();
 };
 
+// Handle Transaction Form Submit
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -51,7 +55,7 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     alert("ইউজার লগইন করা নেই!");
     return;
   }
-//from 
+
   const transaction = {
     date: document.getElementById('date').value,
     type: document.getElementById('type').value,
@@ -69,19 +73,14 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     alert("লেনদেন জমা দিতে সমস্যা হচ্ছে: " + error.message);
   }
 });
-const updateSummaryAndCharts = () => {
-  calculateSummary(); // allTransactions ব্যবহার করবে
-  updateCharts();     // allTransactions ব্যবহার করবে
-};
 
-// UI আপডেট ফাংশন
-const updateUI = () => {
+// Update Summary and Charts
+const updateSummaryAndCharts = () => {
   calculateSummary();
-  renderTransactions();
   updateCharts();
 };
 
-// সামারি ক্যালকুলেশন
+// Calculate and Update Summary
 const calculateSummary = () => {
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -94,7 +93,6 @@ const calculateSummary = () => {
   const totalBalance = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? ((totalBalance / totalIncome) * 100).toFixed(1) : 0;
 
-  // DOM আপডেট
   document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
   document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
   document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
@@ -102,10 +100,9 @@ const calculateSummary = () => {
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 };
 
-// লেনদেন তালিকা দেখান
+// Render Transactions in Table
 const renderTransactions = () => {
   const transactionsList = document.getElementById('transactionsList');
-
   if (transactions.length === 0) {
     transactionsList.innerHTML = "<p>কোনো লেনদেন পাওয়া যায়নি</p>";
     return;
@@ -143,12 +140,14 @@ const renderTransactions = () => {
   html += `</tbody></table>`;
   transactionsList.innerHTML = html;
 };
-// চার্ট আপডেট
+
+// Chart Instances
 let categoryChartInstance = null;
 let monthlyChartInstance = null;
 
+// Update Charts (Pie + Line)
 const updateCharts = () => {
-  // ক্যাটেগরি চার্ট
+  // Category-wise Expense Pie Chart
   const categories = {};
   transactions
     .filter(t => t.type === 'expense')
@@ -168,7 +167,7 @@ const updateCharts = () => {
     }
   });
 
-  // মাসিক সামারি চার্ট
+  // Monthly Balance Line Chart
   const monthlyData = Array(12).fill(0);
   transactions.forEach(t => {
     const month = new Date(t.date).getMonth();
@@ -190,14 +189,14 @@ const updateCharts = () => {
   });
 };
 
+// Income & Expense Categories
 const incomeCategories = ['বেতন', 'ব্যবসা', 'অন্যান্য'];
 const expenseCategories = ['বাসা ভাড়া', 'মোবাইল রিচার্জ', 'বিদ্যুৎ বিল', 'পরিবহন', 'দোকান বিল', 'কেনাকাটা', 'গাড়ির খরচ', 'কাচা বাজার', 'বাড়ি', 'হাস্পাতাল', 'ব্যক্তিগত', 'অন্যান্য'];
 
+// Update Category Dropdown Based on Type
 function updateCategoryOptions() {
   const type = document.getElementById('type').value;
   const categorySelect = document.getElementById('category');
-
-  // পুরাতন অপশনগুলো মুছে ফেলি
   categorySelect.innerHTML = '';
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
@@ -209,14 +208,15 @@ function updateCategoryOptions() {
     categorySelect.appendChild(option);
   });
 }
-//transactions ডিলেট করুন
+
+// Delete Transaction
 window.deleteTransaction = async (id) => {
   if (confirm("আপনি কি নিশ্চিত যে এই লেনদেন মুছতে চান?")) {
     await db.collection('transactions').doc(id).delete();
   }
 };
-//transactions এডিট করুন
 
+// Edit Transaction
 window.editTransaction = async (id) => {
   const doc = await db.collection('transactions').doc(id).get();
   if (!doc.exists) {
@@ -241,16 +241,15 @@ window.editTransaction = async (id) => {
   }
 };
 
-// প্রথমবার পেজ লোড হলে ডিফল্ট ক্যাটাগরি সেট
+// Set Default Categories on Load
 document.addEventListener('DOMContentLoaded', updateCategoryOptions);
 
-// লগআউট
+// Logout
 window.logout = () => {
   auth.signOut();
 };
 
-
-
+// Filter Button Active Class Toggle
 const setActiveButton = (btn) => {
   document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
