@@ -78,19 +78,9 @@
 <div class="transactions-section">
     <div id="transactionsList" class="transactions-list"></div>
 </div>
-    <div>    <div style="margin-bottom: 20px;">
-  <label for="dateFilter">তারিখ দিয়ে দেখাও:</label>
-  <input type="date" id="dateFilter" />
-
-  <label for="monthFilter" style="margin-left: 20px;">মাস দিয়ে দেখাও:</label>
-  <input type="month" id="monthFilter" />
-
-  <button onclick="clearFilters()" style="margin-left: 20px;">সব দেখাও</button>
-</div>
-
-<!-- ফলাফল দেখার জন্য সেকশন -->
-<div id="filterType" style="font-weight: bold; margin-top: 10px;"></div>
-<div id="summary"></div>
+    <div>    <input type="date" id="dateFilter">
+<input type="month" id="monthFilter">
+<button onclick="clearFilters()">Clear</button>
 <table id="transactionTable" border="1" style="margin-top: 10px; border-collapse: collapse;">
   <thead>
     <tr>
