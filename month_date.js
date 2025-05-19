@@ -1,49 +1,8 @@
-const db = firebase.firestore();
-let transactions = [];
-let currentUser = null;
-
-// ইউজার লগইন হলে সেট করো
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-  }
-});
-
-// তারিখ অনুসারে ফিল্টার
-async function filterByDate() {
-  const selectedDate = document.getElementById('filterDate').value;
-  if (!selectedDate || !currentUser) return;
-
-  const start = new Date(selectedDate);
-  const end = new Date(selectedDate);
-  end.setDate(end.getDate() + 1);
-
-  /**
- * Bengali Income-Expense Tracker Web App
- * Author: আপনার নাম
- * Description: Firebase ব্যবহার করে তারিখ ও মাস ভিত্তিক ফিল্টার সহ আয়-ব্যয় ব্যবস্থাপনা
- * Date: ২০২৫
- */
-
-// Global Variables
 let allTransactions = [];
-let transactions = [];
-let currentUser = null;
-let currentFilterType = 'all'; // 'all', 'income', 'expense', 'date', 'month'
-let previousBalance = 0;
+let filteredTransactions = [];
+let selectedDate = null;
+let selectedMonth = null;
 
-// Auth State Listener
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('welcomeMessage').textContent = `স্বাগতম, ${user.email}`;
-    loadTransactions();
-  } else {
-    window.location.href = 'login.html';
-  }
-});
-
-// Load Transactions from Firestore
 const loadTransactions = () => {
   db.collection('transactions')
     .where('userId', '==', currentUser.uid)
@@ -51,128 +10,112 @@ const loadTransactions = () => {
     .onSnapshot((snapshot) => {
       allTransactions = [];
       snapshot.forEach(doc => {
-        allTransactions.push({ 
-          id: doc.id, 
-          ...doc.data(),
-          date: doc.data().date // Ensure date is stored as 'YYYY-MM-DD'
-        });
+        allTransactions.push({ id: doc.id, ...doc.data() });
       });
-      updateSummaryAndCharts();
-      filterTable('all');
+      applyDateMonthFilter();
     });
 };
 
-// Date Filter
-window.filterByDate = (date) => {
-  currentFilterType = 'date';
+document.getElementById('dateFilter').addEventListener('change', function () {
+  selectedDate = this.value;
+  selectedMonth = null;
   document.getElementById('monthFilter').value = '';
-  document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
-  
-  transactions = allTransactions.filter(t => t.date === date);
-  renderTransactions();
-  updateSummaryAndCharts();
-};
+  applyDateMonthFilter();
+});
 
-// Month Filter
-window.filterByMonth = (month) => {
-  currentFilterType = 'month';
+document.getElementById('monthFilter').addEventListener('change', function () {
+  selectedMonth = this.value;
+  selectedDate = null;
   document.getElementById('dateFilter').value = '';
-  document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
+  applyDateMonthFilter();
+});
 
-  const [year, monthNum] = month.split('-');
-  const startDate = new Date(year, monthNum - 1, 1);
-  const endDate = new Date(year, monthNum, 0);
-
-  // Current Month Transactions
-  transactions = allTransactions.filter(t => {
-    const tDate = new Date(t.date);
-    return tDate >= startDate && tDate <= endDate;
-  });
-
-  // Calculate Previous Month Balance
-  const prevMonthDate = new Date(startDate);
-  prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-  const prevStart = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), 1);
-  const prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0);
-
-  const prevTransactions = allTransactions.filter(t => {
-    const tDate = new Date(t.date);
-    return tDate >= prevStart && tDate <= prevEnd;
-  });
-
-  const prevIncome = prevTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const prevExpense = prevTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  previousBalance = prevIncome - prevExpense;
-
-  renderTransactions();
-  updateSummaryAndCharts();
+const clearFilters = () => {
+  selectedDate = null;
+  selectedMonth = null;
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('monthFilter').value = '';
+  applyDateMonthFilter();
 };
 
-// Calculate Summary with Monthly Carryover
-const calculateSummary = () => {
-  let totalIncome, totalExpense, totalBalance, savingsRate;
+const applyDateMonthFilter = () => {
+  const summaryDiv = document.getElementById('summary');
+  const filterTypeDiv = document.getElementById('filterType');
 
-  if (currentFilterType === 'month') {
-    totalIncome = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+  if (selectedDate) {
+    filterTypeDiv.innerText = `তারিখ অনুযায়ী ফলাফল (${selectedDate})`;
+    filteredTransactions = allTransactions.filter(t => {
+      const tDate = new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0];
+      return tDate === selectedDate;
+    });
+    updateSummary(filteredTransactions, false);
+  } else if (selectedMonth) {
+    filterTypeDiv.innerText = `মাস অনুযায়ী ফলাফল (${selectedMonth})`;
 
-    totalExpense = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const [year, month] = selectedMonth.split('-');
+    const prevMonth = new Date(year, month - 2); // আগের মাসের Date object
+    const prevMonthStr = prevMonth.toISOString().slice(0, 7);
 
-    totalBalance = previousBalance + totalIncome - totalExpense;
-    savingsRate = totalIncome > 0 
-      ? ((totalIncome - totalExpense) / totalIncome * 100).toFixed(1)
-      : 0;
+    const currentMonthTx = allTransactions.filter(t => {
+      const tDate = new Date(t.timestamp.seconds * 1000).toISOString().slice(0, 7);
+      return tDate === selectedMonth;
+    });
+
+    const prevMonthTx = allTransactions.filter(t => {
+      const tDate = new Date(t.timestamp.seconds * 1000).toISOString().slice(0, 7);
+      return tDate === prevMonthStr;
+    });
+
+    filteredTransactions = currentMonthTx;
+    updateSummary(currentMonthTx, true, prevMonthTx);
   } else {
-    totalIncome = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    totalExpense = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    totalBalance = totalIncome - totalExpense;
-    savingsRate = totalIncome > 0 
-      ? (totalBalance / totalIncome * 100).toFixed(1)
-      : 0;
+    filterTypeDiv.innerText = 'সব ট্রানজেকশন';
+    filteredTransactions = [...allTransactions];
+    updateSummary(filteredTransactions, false);
   }
 
-  // Update UI
-  document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
-  document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
-  document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
-  document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-  document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+  renderTable(filteredTransactions);
 };
 
-// Modify Existing FilterTable Function
-const filterTable = (filterType) => {
-  currentFilterType = filterType;
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('monthFilter').value = '';
-  
-  transactions = filterType === 'all' 
-    ? [...allTransactions] 
-    : allTransactions.filter(t => t.type === filterType);
+const updateSummary = (data, isMonthly, prevMonthData = []) => {
+  let income = 0, expense = 0;
+  let carryForward = 0;
 
-  renderTransactions();
-  updateSummaryAndCharts();
-  setActiveButton(document.querySelector(`.filter-buttons button[data-type="${filterType}"]`));
+  data.forEach(t => {
+    if (t.type === 'income') income += t.amount;
+    else if (t.type === 'expense') expense += t.amount;
+  });
+
+  if (isMonthly) {
+    prevMonthData.forEach(t => {
+      if (t.type === 'income') carryForward += t.amount;
+      else if (t.type === 'expense') carryForward -= t.amount;
+    });
+  }
+
+  const total = isMonthly ? (carryForward + income - expense) : (income - expense);
+
+  document.getElementById('summary').innerHTML = `
+    ${isMonthly ? `<p>আগের মাসের ব্যালেন্স: ${carryForward}</p>` : ''}
+    <p>মোট আয়: ${income}</p>
+    <p>মোট ব্যয়: ${expense}</p>
+    <p><strong>মোট ব্যালেন্স: ${total}</strong></p>
+  `;
 };
 
-// Add This HTML Structure to Your Dashboard
-/*
-<div class="filters">
-  <input type="date" id="dateFilter" onchange="filterByDate(this.value)" placeholder="তারিখ নির্বাচন করুন">
-  <input type="month" id="monthFilter" onchange="filterByMonth(this.value)" placeholder="মাস নির্বাচন করুন">
-</div>
-*/
+const renderTable = (data) => {
+  const tbody = document.querySelector('#transactionTable tbody');
+  tbody.innerHTML = '';
+
+  data.forEach(t => {
+    const tDate = new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0];
+    tbody.innerHTML += `
+      <tr>
+        <td>${tDate}</td>
+        <td>${t.description || ''}</td>
+        <td>${t.type === 'income' ? t.amount : ''}</td>
+        <td>${t.type === 'expense' ? t.amount : ''}</td>
+      </tr>
+    `;
+  });
+};
