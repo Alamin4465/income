@@ -32,6 +32,9 @@ function loadTransactionsByMonth(selectedMonthStr) {
   const end = new Date(year, month, 0);
   end.setHours(23, 59, 59, 999);
 
+  console.log(">> মাস শুরু:", start.toISOString());
+  console.log(">> মাস শেষ:", end.toISOString());
+
   db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '>=', start)
@@ -39,16 +42,21 @@ function loadTransactionsByMonth(selectedMonthStr) {
     .orderBy('timestamp', 'desc')
     .get()
     .then(snapshot => {
+      console.log(">> বর্তমান মাসের ডেটা:", snapshot.size, "টি");
+
       const currentMonthTx = [];
       snapshot.forEach(doc => {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      // আগের মাসের হিসাব আনো
+      // আগের মাসের তারিখ
       const prevStart = new Date(year, month - 2, 1);
       prevStart.setHours(0, 0, 0, 0);
       const prevEnd = new Date(year, month - 1, 0);
       prevEnd.setHours(23, 59, 59, 999);
+
+      console.log(">> আগের মাস শুরু:", prevStart.toISOString());
+      console.log(">> আগের মাস শেষ:", prevEnd.toISOString());
 
       db.collection('transactions')
         .where('userId', '==', currentUser.uid)
@@ -56,6 +64,8 @@ function loadTransactionsByMonth(selectedMonthStr) {
         .where('timestamp', '<=', prevEnd)
         .get()
         .then(prevSnapshot => {
+          console.log(">> আগের মাসের ডেটা:", prevSnapshot.size, "টি");
+
           const prevMonthTx = [];
           prevSnapshot.forEach(doc => {
             prevMonthTx.push({ id: doc.id, ...doc.data() });
@@ -63,7 +73,13 @@ function loadTransactionsByMonth(selectedMonthStr) {
 
           renderTable(currentMonthTx);
           updateSummary(currentMonthTx, true, prevMonthTx);
+        })
+        .catch(error => {
+          console.error(">> আগের মাসের ডেটা লোড করতে সমস্যা:", error);
         });
+    })
+    .catch(error => {
+      console.error(">> বর্তমান মাসের ডেটা লোড করতে সমস্যা:", error);
     });
 }
 
