@@ -1,86 +1,84 @@
-let allTransactions = []; // এখানে Firestore বা অন্য উৎস থেকে লোড করা ডাটা থাকবে
+<script>
+const allTransactions = [
+  { date: '2025-05-01', type: 'income', category: 'বেতন', amount: 10000 },
+  { date: '2025-05-03', type: 'expense', category: 'খাবার', amount: 2000 },
+  { date: '2025-05-10', type: 'income', category: 'ফ্রিল্যান্স', amount: 5000 },
+  { date: '2025-04-28', type: 'income', category: 'পুরাতন', amount: 3000 },
+  { date: '2025-04-29', type: 'expense', category: 'ভাড়া', amount: 1500 },
+];
 
-// তারিখ ভিত্তিক ফিল্টার
-function showSpecificDate(selectedDate) {
-    if (!selectedDate) return;
-
-    const filtered = allTransactions.filter(t => t.date === selectedDate);
-
-    let income = 0, expense = 0;
-    filtered.forEach(t => {
-        if (t.type === 'income') income += t.amount;
-        else if (t.type === 'expense') expense += t.amount;
-    });
-
-    const balance = income - expense;
-    renderFilteredTable(filtered, income, expense, balance);
+function showSpecificDate(dateStr) {
+  const filtered = allTransactions.filter(t => t.date === dateStr);
+  showResult(filtered, 0);
 }
 
-// মাস ভিত্তিক ফিল্টার
-function showSpecificMonth(selectedMonth) {
-    if (!selectedMonth) return;
+function showSpecificMonth(monthStr) {
+  if (!monthStr) return;
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
+  const year = new Date().getFullYear();
 
-    // বর্তমান মাসের সব ডাটা
-    const filtered = allTransactions.filter(t => {
-        const d = new Date(t.date);
-        const month = ('0' + (d.getMonth() + 1)).slice(-2);
-        return month === selectedMonth && d.getFullYear() === currentYear;
-    });
+  const filtered = allTransactions.filter(t => {
+    const d = new Date(t.date);
+    return (d.getMonth() + 1 === parseInt(monthStr)) && d.getFullYear() === year;
+  });
 
-    // আগের মাসের ব্যালেন্স
-    const prevMonth = parseInt(selectedMonth) - 1 || 12;
-    const prevYear = selectedMonth === '01' ? currentYear - 1 : currentYear;
+  // আগের মাস হিসাব
+  let prevMonth = parseInt(monthStr) - 1;
+  let prevYear = year;
+  if (prevMonth === 0) {
+    prevMonth = 12;
+    prevYear--;
+  }
 
-    const previousBalance = allTransactions.reduce((sum, t) => {
-        const d = new Date(t.date);
-        const month = d.getMonth() + 1;
-        const year = d.getFullYear();
-        if ((month === prevMonth && year === prevYear)) {
-            return t.type === 'income' ? sum + t.amount : sum - t.amount;
-        }
-        return sum;
-    }, 0);
+  const prevBalance = allTransactions.reduce((acc, t) => {
+    const d = new Date(t.date);
+    const m = d.getMonth() + 1;
+    const y = d.getFullYear();
+    if (m === prevMonth && y === prevYear) {
+      return t.type === 'income' ? acc + t.amount : acc - t.amount;
+    }
+    return acc;
+  }, 0);
 
-    let income = 0, expense = 0;
-    filtered.forEach(t => {
-        if (t.type === 'income') income += t.amount;
-        else if (t.type === 'expense') expense += t.amount;
-    });
-
-    const balance = previousBalance + income - expense;
-    renderFilteredTable(filtered, income, expense, balance, previousBalance);
+  showResult(filtered, prevBalance);
 }
 
-// টেবিল রেন্ডার করা
-function renderFilteredTable(data, income, expense, balance, prevBalance = 0) {
-    const tbody = document.getElementById('filteredResultsBody');
-    const tfoot = document.getElementById('filteredSummary');
-    tbody.innerHTML = '';
-    tfoot.innerHTML = '';
+function showResult(transactions, prevBalance) {
+  let income = 0;
+  let expense = 0;
+  let runningBalance = prevBalance;
 
-    let runningBalance = prevBalance;
+  const tbody = document.getElementById("filteredResultsBody");
+  const tfoot = document.getElementById("filteredSummary");
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
 
-    data.forEach(t => {
-        runningBalance += t.type === 'income' ? t.amount : -t.amount;
-        const row = `
-            <tr>
-                <td>${t.date}</td>
-                <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-                <td>${t.category}</td>
-                <td>৳ ${t.amount.toLocaleString('bn-BD')}</td>
-                <td>৳ ${runningBalance.toLocaleString('bn-BD')}</td>
-            </tr>`;
-        tbody.innerHTML += row;
-    });
+  transactions.forEach(t => {
+    if (t.type === 'income') income += t.amount;
+    else if (t.type === 'expense') expense += t.amount;
 
-    tfoot.innerHTML = `
-        <tr>
-            <td colspan="2"><strong>সারাংশ</strong></td>
-            <td><strong>আয়: ৳${income.toLocaleString('bn-BD')}</strong></td>
-            <td><strong>ব্যয়: ৳${expense.toLocaleString('bn-BD')}</strong></td>
-            <td><strong>মোট: ৳${balance.toLocaleString('bn-BD')}</strong></td>
-        </tr>`;
+    runningBalance += t.type === 'income' ? t.amount : -t.amount;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${t.date}</td>
+        <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
+        <td>${t.category}</td>
+        <td>৳ ${t.amount}</td>
+        <td>৳ ${runningBalance}</td>
+      </tr>
+    `;
+  });
+
+  const net = prevBalance + income - expense;
+
+  tfoot.innerHTML = `
+    <tr>
+      <td colspan="2"><strong>সারাংশ</strong></td>
+      <td><strong>আয়: ৳${income}</strong></td>
+      <td><strong>ব্যয়: ৳${expense}</strong></td>
+      <td><strong>মোট: ৳${net}</strong></td>
+    </tr>
+  `;
 }
+</script>
