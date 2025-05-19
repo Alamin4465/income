@@ -1,5 +1,5 @@
 function loadTransactionsByDate(selectedDateStr) {
-  const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd format
+  const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd ফরম্যাট
   const start = new Date(selectedDate);
   start.setHours(0, 0, 0, 0);
 
@@ -17,8 +17,8 @@ function loadTransactionsByDate(selectedDateStr) {
       snapshot.forEach(doc => {
         filtered.push({ id: doc.id, ...doc.data() });
       });
-      renderTable(filtered); // তোমার টেবিলে দেখাও
-      updateSummary(filtered, false); // সামারি আপডেট করো
+      renderTable(filtered); // টেবিলে ডেটা প্রদর্শন
+      updateSummary(filtered, false); // সামারি আপডেট
     });
 }
 
@@ -43,7 +43,7 @@ function loadTransactionsByMonth(selectedMonthStr) {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      // আগের মাসের হিসাব আনো
+      // পূর্ববর্তী মাসের ডেটা অনুসন্ধান
       const prevStart = new Date(year, month - 2, 1);
       prevStart.setHours(0, 0, 0, 0);
       const prevEnd = new Date(year, month - 1, 0);
@@ -66,7 +66,6 @@ function loadTransactionsByMonth(selectedMonthStr) {
     });
 }
 
-
 document.getElementById('dateFilter').addEventListener('change', function () {
   loadTransactionsByDate(this.value);
   document.getElementById('monthFilter').value = '';
@@ -80,10 +79,8 @@ document.getElementById('monthFilter').addEventListener('change', function () {
 function clearFilters() {
   document.getElementById('dateFilter').value = '';
   document.getElementById('monthFilter').value = '';
-  loadAllTransactions(); // আবার সব ডেটা দেখাও
+  loadAllTransactions(); // সমস্ত ডেটা পুনরায় লোড
 }
-
-
 
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
