@@ -24,6 +24,7 @@ function loadTransactionsByDate(selectedDateStr) {
 
 
 function loadTransactionsByMonth(selectedMonthStr) {
+function loadTransactionsByMonth(selectedMonthStr) {
   const [year, month] = selectedMonthStr.split('-');
 
   const start = new Date(year, month - 1, 1);
@@ -32,9 +33,6 @@ function loadTransactionsByMonth(selectedMonthStr) {
   const end = new Date(year, month, 0);
   end.setHours(23, 59, 59, 999);
 
-  console.log(">> মাস শুরু:", start.toISOString());
-  console.log(">> মাস শেষ:", end.toISOString());
-
   db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '>=', start)
@@ -42,80 +40,37 @@ function loadTransactionsByMonth(selectedMonthStr) {
     .orderBy('timestamp', 'desc')
     .get()
     .then(snapshot => {
-      console.log(">> বর্তমান মাসের ডেটা:", snapshot.size, "টি");
-
       const currentMonthTx = [];
       snapshot.forEach(doc => {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      // আগের মাসের তারিখ
+      // আগের মাসের ডেটা আনার জন্য তারিখ সেট
       const prevStart = new Date(year, month - 2, 1);
       prevStart.setHours(0, 0, 0, 0);
       const prevEnd = new Date(year, month - 1, 0);
       prevEnd.setHours(23, 59, 59, 999);
 
-      console.log(">> আগের মাস শুরু:", prevStart.toISOString());
-      console.log(">> আগের মাস শেষ:", prevEnd.toISOString());
-
-      db.collection('transactions')
+      return db.collection('transactions')
         .where('userId', '==', currentUser.uid)
         .where('timestamp', '>=', prevStart)
         .where('timestamp', '<=', prevEnd)
         .get()
         .then(prevSnapshot => {
-          console.log(">> আগের মাসের ডেটা:", prevSnapshot.size, "টি");
-
           const prevMonthTx = [];
           prevSnapshot.forEach(doc => {
             prevMonthTx.push({ id: doc.id, ...doc.data() });
           });
 
+          // রেন্ডার ও সামারি একসাথে করো
           renderTable(currentMonthTx);
           updateSummary(currentMonthTx, true, prevMonthTx);
-        })
-        .catch(error => {
-          console.error(">> আগের মাসের ডেটা লোড করতে সমস্যা:", error);
         });
     })
     .catch(error => {
-      console.error(">> বর্তমান মাসের ডেটা লোড করতে সমস্যা:", error);
+      console.error("মাসের ডেটা লোড করতে সমস্যা:", error);
     });
 }
-
-
-document.getElementById('dateFilter').addEventListener('change', function () {
-  loadTransactionsByDate(this.value);
-  document.getElementById('monthFilter').value = '';
-});
-
-document.getElementById('monthFilter').addEventListener('change', function () {
-  loadTransactionsByMonth(this.value);
-  document.getElementById('dateFilter').value = '';
-});
-
-function clearFilters() {
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('monthFilter').value = '';
-  loadAllTransactions(); // আবার সব ডেটা দেখাও
-}
-
-function renderTable(data) {
-  const tbody = document.querySelector('#transactionTable tbody');
-  tbody.innerHTML = '';
-  data.forEach(t => {
-    const tDate = t.timestamp.toDate().toISOString().split('T')[0];
-    tbody.innerHTML += `
-      <tr>
-        <td>${tDate}</td>
-        <td>${t.description || ''}</td>
-        <td>${t.type === 'income' ? t.amount : ''}</td>
-        <td>${t.type === 'expense' ? t.amount : ''}</td>
-      </tr>
-    `;
-  });
-}
-
 
 function updateSummary(transactions, isMonthly, prevMonthTx = []) {
   let currentIncome = 0;
@@ -149,3 +104,36 @@ function updateSummary(transactions, isMonthly, prevMonthTx = []) {
     </div>
   `;
 }
+
+document.getElementById('dateFilter').addEventListener('change', function () {
+  loadTransactionsByDate(this.value);
+  document.getElementById('monthFilter').value = '';
+});
+
+document.getElementById('monthFilter').addEventListener('change', function () {
+  loadTransactionsByMonth(this.value);
+  document.getElementById('dateFilter').value = '';
+});
+
+function clearFilters() {
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('monthFilter').value = '';
+  loadAllTransactions(); // আবার সব ডেটা দেখাও
+}
+
+function renderTable(data) {
+  const tbody = document.querySelector('#transactionTable tbody');
+  tbody.innerHTML = '';
+  data.forEach(t => {
+    const tDate = t.timestamp.toDate().toISOString().split('T')[0];
+    tbody.innerHTML += `
+      <tr>
+        <td>${tDate}</td>
+        <td>${t.description || ''}</td>
+        <td>${t.type === 'income' ? t.amount : ''}</td>
+        <td>${t.type === 'expense' ? t.amount : ''}</td>
+      </tr>
+    `;
+  });
+}
+
