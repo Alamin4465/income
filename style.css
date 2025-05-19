@@ -353,3 +353,11 @@ button {
 .edit-btn:hover {
   background-color: #2e7d32;
 }
+
+.transaction-entry {
+  background-color: #f0f0f0;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+}
