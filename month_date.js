@@ -79,6 +79,44 @@ function clearFilters() {
   document.getElementById('monthFilter').value = '';
   loadAllTransactions(); // আবার সব ডেটা দেখাও
 }
+
+function updateSummary(data, isMonthly, prevMonthData = []) {
+  let income = 0, expense = 0, carry = 0;
+  let prevIncome = 0, prevExpense = 0;
+
+  // বর্তমান মাসের আয়/ব্যয় হিসাব
+  data.forEach(t => {
+    if (t.type === 'income') income += t.amount;
+    else if (t.type === 'expense') expense += t.amount;
+  });
+
+  // আগের মাসের আয়/ব্যয় হিসাব
+  if (isMonthly) {
+    prevMonthData.forEach(t => {
+      if (t.type === 'income') {
+        prevIncome += t.amount;
+        carry += t.amount;
+      }
+      else if (t.type === 'expense') {
+        prevExpense += t.amount;
+        carry -= t.amount;
+      }
+    });
+  }
+
+  const total = isMonthly ? carry + income - expense : income - expense;
+
+  document.getElementById('summary').innerHTML = `
+    ${isMonthly ? `
+      <p>গত মাসের মোট আয়: ${prevIncome}</p>
+      <p>গত মাসের মোট ব্যয়: ${prevExpense}</p>
+      <p><strong>গত মাসের ব্যালেন্স: ${carry}</strong></p>
+    ` : ''}
+    <p>এই মাসের মোট আয়: ${income}</p>
+    <p>এই মাসের মোট ব্যয়: ${expense}</p>
+    <p><strong>মোট ব্যালেন্স: ${total}</strong></p>
+  `;
+}
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
   tbody.innerHTML = '';
