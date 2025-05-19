@@ -1,54 +1,71 @@
-// // তারিখ অনুযায়ী ফিল্টার
-function applyDateFilter() {
-  const selectedDate = document.getElementById('dateFilter').value;
-  if (!selectedDate) return alert("তারিখ নির্বাচন করুন");
+function filterByDate() {
+  const selectedDate = document.getElementById('filterDate').value;
+  if (!selectedDate) {
+    alert("অনুগ্রহ করে একটি তারিখ নির্বাচন করুন");
+    return;
+  }
 
-  const filtered = allTransactions.filter(t => t.date === selectedDate);
-  transactions = filtered;
-  renderTransactions();
-  calculateSummary();
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .where('date', '==', selectedDate)
+    .orderBy('date')
+    .get()
+    .then(snapshot => {
+      transactions = [];
+      snapshot.forEach(doc => {
+        transactions.push({ id: doc.id, ...doc.data() });
+      });
+      renderTransactions();
+      calculateSummary();
+    });
 }
+function filterByMonth() {
+  const selectedMonth = document.getElementById('filterMonth').value;
+  if (selectedMonth === "") {
+    alert("অনুগ্রহ করে একটি মাস নির্বাচন করুন");
+    return;
+  }
 
-// মাস অনুযায়ী ফিল্টার
-function applyMonthFilter() {
-  const selected = document.getElementById('monthFilter').value;
-  if (!selected) return alert("মাস নির্বাচন করুন");
+  const year = new Date().getFullYear();
+  const month = parseInt(selectedMonth);
+  const startDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
+  const endDate = `${year}-${(month + 2).toString().padStart(2, '0')}-01`;
 
-  const [year, month] = selected.split('-');
-  const currentMonth = parseInt(month) - 1;
-  const currentYear = parseInt(year);
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .where('date', '>=', startDate)
+    .where('date', '<', endDate)
+    .orderBy('date')
+    .get()
+    .then(snapshot => {
+      transactions = [];
+      let income = 0, expense = 0;
+      snapshot.forEach(doc => {
+        const data = { id: doc.id, ...doc.data() };
+        transactions.push(data);
+        if (data.type === 'income') income += data.amount;
+        else expense += data.amount;
+      });
 
-  const currentMonthData = allTransactions.filter(t => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
+      // হিসাব করো গত মাস পর্যন্ত ব্যালেন্স
+      let previousBalance = 0;
+      allTransactions.forEach(t => {
+        const d = new Date(t.date);
+        if (d.getFullYear() < year || (d.getFullYear() === year && d.getMonth() < month)) {
+          if (t.type === 'income') previousBalance += t.amount;
+          else previousBalance -= t.amount;
+        }
+      });
 
-  // আগের মাসের ব্যালেন্স
-  let previousBalance = 0;
-  allTransactions.forEach(t => {
-    const d = new Date(t.date);
-    const m = d.getMonth();
-    const y = d.getFullYear();
+      const balance = previousBalance + income - expense;
+      const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
 
-    if (y < currentYear || (y === currentYear && m < currentMonth)) {
-      if (t.type === 'income') previousBalance += t.amount;
-      else previousBalance -= t.amount;
-    }
-  });
+      renderTransactions();
 
-  transactions = currentMonthData;
-
-  renderTransactions();
-
-  // মাসিক ইনকাম/এক্সপেন্স + পূর্বের ব্যালেন্সসহ সামারি দেখাও
-  const income = currentMonthData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const expense = currentMonthData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const balance = previousBalance + income - expense;
-  const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
-
-  document.getElementById('total-income').textContent = `৳ ${income.toLocaleString('bn-BD')}`;
-  document.getElementById('total-expense').textContent = `৳ ${expense.toLocaleString('bn-BD')}`;
-  document.getElementById('total-balance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
-  document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-  document.getElementById('savingsAmount').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+      document.getElementById('total-income').textContent = `৳ ${income.toLocaleString('bn-BD')}`;
+      document.getElementById('total-expense').textContent = `৳ ${expense.toLocaleString('bn-BD')}`;
+      document.getElementById('total-balance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+      document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+      document.getElementById('savingsAmount').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+    });
 }
