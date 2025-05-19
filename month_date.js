@@ -18,89 +18,161 @@ async function filterByDate() {
   const end = new Date(selectedDate);
   end.setDate(end.getDate() + 1);
 
-  const snapshot = await db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
-    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(end))
-    .orderBy('timestamp', 'desc')
-    .get();
+  /**
+ * Bengali Income-Expense Tracker Web App
+ * Author: আপনার নাম
+ * Description: Firebase ব্যবহার করে তারিখ ও মাস ভিত্তিক ফিল্টার সহ আয়-ব্যয় ব্যবস্থাপনা
+ * Date: ২০২৫
+ */
 
-  transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+// Global Variables
+let allTransactions = [];
+let transactions = [];
+let currentUser = null;
+let currentFilterType = 'all'; // 'all', 'income', 'expense', 'date', 'month'
+let previousBalance = 0;
+
+// Auth State Listener
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('welcomeMessage').textContent = `স্বাগতম, ${user.email}`;
+    loadTransactions();
+  } else {
+    window.location.href = 'login.html';
+  }
+});
+
+// Load Transactions from Firestore
+const loadTransactions = () => {
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot((snapshot) => {
+      allTransactions = [];
+      snapshot.forEach(doc => {
+        allTransactions.push({ 
+          id: doc.id, 
+          ...doc.data(),
+          date: doc.data().date // Ensure date is stored as 'YYYY-MM-DD'
+        });
+      });
+      updateSummaryAndCharts();
+      filterTable('all');
+    });
+};
+
+// Date Filter
+window.filterByDate = (date) => {
+  currentFilterType = 'date';
+  document.getElementById('monthFilter').value = '';
+  document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
+  
+  transactions = allTransactions.filter(t => t.date === date);
   renderTransactions();
-  calculateSummary(); // ঐ দিনের জন্য সারাংশ
-}
-console.log("Filtered Transactions:", transactions);
+  updateSummaryAndCharts();
+};
 
-// মাস অনুসারে ফিল্টার
-async function filterByMonth() {
-  const selectedMonth = document.getElementById('filterMonth').value;
-  if (selectedMonth === '' || !currentUser) return;
+// Month Filter
+window.filterByMonth = (month) => {
+  currentFilterType = 'month';
+  document.getElementById('dateFilter').value = '';
+  document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
 
-  const year = new Date().getFullYear();
-  const start = new Date(year, selectedMonth, 1);
-  const end = new Date(year, parseInt(selectedMonth) + 1, 1);
+  const [year, monthNum] = month.split('-');
+  const startDate = new Date(year, monthNum - 1, 1);
+  const endDate = new Date(year, monthNum, 0);
 
-  // বর্তমান মাসের ডেটা
-  const currentSnapshot = await db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
-    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(end))
-    .orderBy('timestamp', 'desc')
-    .get();
-
-  const currentMonthData = currentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-  // আগের ব্যালেন্স
-  const previousSnapshot = await db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(start))
-    .get();
-
-  let previousIncome = 0;
-  let previousExpense = 0;
-  previousSnapshot.forEach(doc => {
-    const data = doc.data();
-    if (data.type === 'income') previousIncome += data.amount;
-    else if (data.type === 'expense') previousExpense += data.amount;
+  // Current Month Transactions
+  transactions = allTransactions.filter(t => {
+    const tDate = new Date(t.date);
+    return tDate >= startDate && tDate <= endDate;
   });
 
-  const previousBalance = previousIncome - previousExpense;
+  // Calculate Previous Month Balance
+  const prevMonthDate = new Date(startDate);
+  prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+  const prevStart = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), 1);
+  const prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0);
 
-  // বর্তমান মাসের সারাংশ
-  transactions = currentMonthData;
+  const prevTransactions = allTransactions.filter(t => {
+    const tDate = new Date(t.date);
+    return tDate >= prevStart && tDate <= prevEnd;
+  });
+
+  const prevIncome = prevTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const prevExpense = prevTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  previousBalance = prevIncome - prevExpense;
+
   renderTransactions();
+  updateSummaryAndCharts();
+};
 
-  const currentIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const currentExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const totalBalance = previousBalance + currentIncome - currentExpense;
-  const savingsRate = currentIncome > 0 ? ((totalBalance / currentIncome) * 100).toFixed(1) : 0;
+// Calculate Summary with Monthly Carryover
+const calculateSummary = () => {
+  let totalIncome, totalExpense, totalBalance, savingsRate;
 
-  document.getElementById('total-income').textContent = `৳ ${currentIncome.toLocaleString('bn-BD')}`;
-  document.getElementById('total-expense').textContent = `৳ ${currentExpense.toLocaleString('bn-BD')}`;
+  if (currentFilterType === 'month') {
+    totalIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    totalExpense = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    totalBalance = previousBalance + totalIncome - totalExpense;
+    savingsRate = totalIncome > 0 
+      ? ((totalIncome - totalExpense) / totalIncome * 100).toFixed(1)
+      : 0;
+  } else {
+    totalIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    totalExpense = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    totalBalance = totalIncome - totalExpense;
+    savingsRate = totalIncome > 0 
+      ? (totalBalance / totalIncome * 100).toFixed(1)
+      : 0;
+  }
+
+  // Update UI
+  document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+  document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
   document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
-}console.log("Filtered Transactions:", transactions);
+};
 
-// লেনদেন দেখানোর ফাংশন
-function renderTransactions() {
-  const tableBody = document.getElementById('transactionTableBody');
-  tableBody.innerHTML = '';
+// Modify Existing FilterTable Function
+const filterTable = (filterType) => {
+  currentFilterType = filterType;
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('monthFilter').value = '';
+  
+  transactions = filterType === 'all' 
+    ? [...allTransactions] 
+    : allTransactions.filter(t => t.type === filterType);
 
-  if (transactions.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="5">কোনো লেনদেন পাওয়া যায়নি।</td></tr>`;
-    return;
-  }
+  renderTransactions();
+  updateSummaryAndCharts();
+  setActiveButton(document.querySelector(`.filter-buttons button[data-type="${filterType}"]`));
+};
 
-  transactions.forEach((tx, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${tx.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-      <td>${tx.category || 'N/A'}</td>
-      <td>৳ ${tx.amount.toLocaleString('bn-BD')}</td>
-      <td>${tx.timestamp?.toDate ? new Date(tx.timestamp.toDate()).toLocaleDateString('bn-BD') : ''}</td>
-    `;
-    tableBody.appendChild(row);
-  });
-}
+// Add This HTML Structure to Your Dashboard
+/*
+<div class="filters">
+  <input type="date" id="dateFilter" onchange="filterByDate(this.value)" placeholder="তারিখ নির্বাচন করুন">
+  <input type="month" id="monthFilter" onchange="filterByMonth(this.value)" placeholder="মাস নির্বাচন করুন">
+</div>
+*/
