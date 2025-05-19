@@ -21,6 +21,8 @@ function loadTransactionsByDate(selectedDateStr) {
       updateSummary(filtered, false); // সামারি আপডেট করো
     });
 }
+
+
 function loadTransactionsByMonth(selectedMonthStr) {
   const [year, month] = selectedMonthStr.split('-');
 
@@ -64,6 +66,8 @@ function loadTransactionsByMonth(selectedMonthStr) {
         });
     });
 }
+
+
 document.getElementById('dateFilter').addEventListener('change', function () {
   loadTransactionsByDate(this.value);
   document.getElementById('monthFilter').value = '';
@@ -79,6 +83,7 @@ function clearFilters() {
   document.getElementById('monthFilter').value = '';
   loadAllTransactions(); // আবার সব ডেটা দেখাও
 }
+
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
   tbody.innerHTML = '';
@@ -94,3 +99,4 @@ function renderTable(data) {
     `;
   });
 }
+
