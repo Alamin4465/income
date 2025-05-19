@@ -82,50 +82,23 @@
 <div class="filter-section">
     <h2>বিশেষ ফিল্টার</h2>
     
-    <div class="special-filters">
-        <!-- তারিখ ফিল্টার -->
-        <div class="filter-group">
-            <label for="specificDate">তারিখ নির্বাচন করুন:</label>
-            <input type="date" id="specificDate" onchange="showSpecificDate(this.value)">
-        </div>
 
-        <!-- মাস ফিল্টার -->
-        <div class="filter-group">
-            <label for="specificMonth">মাস নির্বাচন করুন:</label>
-            <select id="specificMonth" onchange="showSpecificMonth(this.value)">
-                <option value="">সব মাস</option>
-                <option value="01">জানুয়ারি</option>
-                <option value="02">ফেব্রুয়ারি</option>
-                <option value="03">মার্চ</option>
-                <option value="04">এপ্রিল</option>
-                <option value="05">মে</option>
-                <option value="06">জুন</option>
-                <option value="07">জুলাই</option>
-                <option value="08">আগস্ট</option>
-                <option value="09">সেপ্টেম্বর</option>
-                <option value="10">অক্টোবর</option>
-                <option value="11">নভেম্বর</option>
-                <option value="12">ডিসেম্বর</option>
-            </select>
-        </div>
-    </div>
+<!-- তারিখ ফিল্টার -->
+<input type="date" id="specificDate" onchange="showSpecificDate(this.value)">
 
-    <!-- ফিল্টার ফলাফল টেবিল -->
-    <table class="filtered-results-table">
-        <thead>
-            <tr>
-                <th>তারিখ</th>
-                <th>ধরন</th>
-                <th>ক্যাটাগরি</th>
-                <th>পরিমাণ</th>
-                <th>অবশিষ্ট টাকা</th>
-            </tr>
-        </thead>
-        <tbody id="filteredResultsBody"></tbody>
-        <tfoot id="filteredSummary"></tfoot>
-    </table>
-</div>
+<!-- মাস ফিল্টার -->
+<select id="specificMonth" onchange="showSpecificMonth(this.value)">
+  <option value="">সব মাস</option>
+  <option value="01">জানুয়ারি</option>
+  <option value="02">ফেব্রুয়ারি</option>
+  <!-- ... -->
+</select>
 
+<!-- টেবিল -->
+<table>
+  <tbody id="filteredResultsBody"></tbody>
+  <tfoot id="filteredSummary"></tfoot>
+</table>
     <!-- চার্ট সেকশন -->
     <div class="chart-container">
         <div class="chart-box">
