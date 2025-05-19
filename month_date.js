@@ -107,5 +107,35 @@ function renderTable(data) {
       </tr>
     `;
   });
-}
+}function updateSummary(transactions, isMonthly, prevMonthTx = []) {
+  let currentIncome = 0;
+  let currentExpense = 0;
 
+  transactions.forEach(t => {
+    if (t.type === 'income') currentIncome += Number(t.amount);
+    else if (t.type === 'expense') currentExpense += Number(t.amount);
+  });
+
+  let previousBalance = 0;
+
+  if (isMonthly && Array.isArray(prevMonthTx) && prevMonthTx.length > 0) {
+    let prevIncome = 0;
+    let prevExpense = 0;
+    prevMonthTx.forEach(t => {
+      if (t.type === 'income') prevIncome += Number(t.amount);
+      else if (t.type === 'expense') prevExpense += Number(t.amount);
+    });
+    previousBalance = prevIncome - prevExpense;
+  }
+
+  const totalBalance = previousBalance + currentIncome - currentExpense;
+
+  document.getElementById('filter_summary').innerHTML = `
+    <div class="summary-box">
+      <p>গত মাসের অবশিষ্ট: <strong>${previousBalance}</strong> টাকা</p>
+      <p>বর্তমান মাসের আয়: <strong>${currentIncome}</strong> টাকা</p>
+      <p>বর্তমান মাসের ব্যয়: <strong>${currentExpense}</strong> টাকা</p>
+      <p>মোট টাকা: <strong>${totalBalance}</strong> টাকা</p>
+    </div>
+  `;
+}
