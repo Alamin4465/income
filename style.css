@@ -212,21 +212,6 @@ body {
   overflow-x: auto;
 }
 
-/* ফিল্টার বাটন */
-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  margin: 4px;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background 0.3s ease;
-}
-
-button:hover {
-  background-color: #388e3c;
-}
 
 /* ডেক্সটপ: টেবিল স্টাইল */
 table {
