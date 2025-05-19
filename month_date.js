@@ -29,6 +29,7 @@ async function filterByDate() {
   renderTransactions();
   calculateSummary(); // ঐ দিনের জন্য সারাংশ
 }
+console.log("Filtered Transactions:", transactions);
 
 // মাস অনুসারে ফিল্টার
 async function filterByMonth() {
@@ -79,29 +80,27 @@ async function filterByMonth() {
   document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
   document.getElementById('savingsRate').textContent = `${savingsRate}%`;
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
-}
+}console.log("Filtered Transactions:", transactions);
 
 // লেনদেন দেখানোর ফাংশন
 function renderTransactions() {
-  const container = document.getElementById('transactionsList');
-  container.innerHTML = '';
+  const tableBody = document.getElementById('transactionTableBody');
+  tableBody.innerHTML = '';
 
   if (transactions.length === 0) {
-    container.innerHTML = '<p>কোনো লেনদেন পাওয়া যায়নি।</p>';
+    tableBody.innerHTML = `<tr><td colspan="5">কোনো লেনদেন পাওয়া যায়নি।</td></tr>`;
     return;
   }
 
   transactions.forEach((tx, index) => {
-    const entry = document.createElement('div');
-    entry.classList.add('transaction-entry'); // চাইলে CSS দিবেন
-    entry.innerHTML = `
-      <div><strong>${index + 1}.</strong> 
-        ${tx.type === 'income' ? 'আয়' : 'ব্যয়'} | 
-        ক্যাটাগরি: ${tx.category || 'N/A'} | 
-        পরিমাণ: ৳${tx.amount} | 
-        তারিখ: ${tx.timestamp?.toDate ? new Date(tx.timestamp.toDate()).toLocaleDateString('bn-BD') : ''}
-      </div>
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${tx.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
+      <td>${tx.category || 'N/A'}</td>
+      <td>৳ ${tx.amount.toLocaleString('bn-BD')}</td>
+      <td>${tx.timestamp?.toDate ? new Date(tx.timestamp.toDate()).toLocaleDateString('bn-BD') : ''}</td>
     `;
-    container.appendChild(entry);
+    tableBody.appendChild(row);
   });
 }
