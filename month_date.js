@@ -1,86 +1,131 @@
-// ফায়ারস্টোর থেকে ডেটা নিয়ে মাস ভিত্তিক ফিল্টার
-async function showSpecificMonth(selectedMonth) {
+
+// ফায়ারবেস ইন্সট্যান্স ইনিশিয়ালাইজ
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// মাস ভিত্তিক ফিল্টার
+async function filterByMonth() {
+  const selectedMonth = document.getElementById('monthFilter').value;
+  const [year, month] = selectedMonth.split('-');
+  
+  const startDate = new Date(year, month - 1, 1);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(year, month, 0);
+  endDate.setHours(23, 59, 59, 999);
+
   try {
-    const [year, month] = selectedMonth.split('-');
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-    
-    const transactionsRef = db.collection('transactions');
-    const snapshot = await transactionsRef
-      .where('userId', '==', currentUser.uid)
-      .where('date', '>=', startDate)
-      .where('date', '<=', endDate)
-      .orderBy('date', 'desc')
+    const snapshot = await db.collection('transactions')
+      .where('userId', '==', firebase.auth().currentUser.uid)
+      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+      .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
+      .orderBy('timestamp', 'desc')
       .get();
 
-    const monthTransactions = snapshot.docs.map(doc => ({
+    const transactions = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-      date: doc.data().date.toDate() // টাইমস্ট্যাম্পকে জাভাস্ক্রিপ্ট ডেটে কনভার্ট
+      timestamp: doc.data().timestamp.toDate() // টাইমস্ট্যাম্পকে JS Date তে কনভার্ট
     }));
 
-    renderTransactionList(monthTransactions);
-    renderMonthlySummaryBlock(monthTransactions, selectedMonth);
+    renderTransactions(transactions);
   } catch (error) {
     console.error("মাসের ডেটা লোড করতে সমস্যা:", error);
   }
 }
 
-// নির্দিষ্ট তারিখের ডেটা ও ব্যালেন্স ক্যালকুলেশন
-async function showSpecificDate(selectedDate) {
+// তারিখ ভিত্তিক ফিল্টার
+async function filterByDate() {
+  const selectedDate = document.getElementById('dateFilter').value;
+  const dateObj = new Date(selectedDate);
+  
+  const startOfDay = new Date(dateObj);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(dateObj);
+  endOfDay.setHours(23, 59, 59, 999);
+
   try {
-    const selectedDateObj = new Date(selectedDate);
-    const endOfDay = new Date(selectedDateObj);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // সম্পূর্ণ তারিখের ডেটা
-    const dailySnapshot = await db.collection('transactions')
-      .where('userId', '==', currentUser.uid)
-      .where('date', '>=', selectedDateObj)
-      .where('date', '<=', endOfDay)
-      .orderBy('date', 'asc')
+    const snapshot = await db.collection('transactions')
+      .where('userId', '==', firebase.auth().currentUser.uid)
+      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+      .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endOfDay))
+      .orderBy('timestamp', 'desc')
       .get();
 
-    // ব্যালেন্স ক্যালকুলেশনের জন্য সব ডেটা
-    const balanceSnapshot = await db.collection('transactions')
-      .where('userId', '==', currentUser.uid)
-      .where('date', '<=', endOfDay)
-      .orderBy('date', 'asc')
-      .get();
-
-    const sortedTransactions = balanceSnapshot.docs.map(doc => ({
-      ...doc.data(),
-      date: doc.data().date.toDate()
-    }));
-
-    let cumulativeBalance = 0;
-    sortedTransactions.forEach(t => {
-      cumulativeBalance += t.type === 'income' ? t.amount : -t.amount;
-    });
-
-    const dailyTransactions = dailySnapshot.docs.map(doc => ({
+    const transactions = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-      date: doc.data().date.toDate()
+      timestamp: doc.data().timestamp.toDate()
     }));
 
-    renderDailyTransactions(dailyTransactions, cumulativeBalance);
+    renderTransactions(transactions);
   } catch (error) {
     console.error("তারিখভিত্তিক ডেটা লোড করতে সমস্যা:", error);
   }
 }
 
-// ট্রানজ্যাকশন লিস্ট রেন্ডারিং
-function renderTransactionList(transactions) {
-  const tbody = document.getElementById('filteredResultsBody');
-  tbody.innerHTML = transactions.map(t => `
-    <tr>
-      <td>${t.date.toLocaleDateString('bn-BD')}</td>
-      <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-      <td>${t.category}</td>
-      <td style="color: ${t.type === 'income' ? 'green' : 'red'}">
-        ৳ ${t.amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}
+// ট্রানজ্যাকশন রেন্ডার
+function renderTransactions(transactions) {
+  const tbody = document.getElementById('transactionsBody');
+  tbody.innerHTML = '';
+
+  transactions.forEach(transaction => {
+    const row = document.createElement('tr');
+    const dateOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric', 
+      timeZone: 'Asia/Dhaka'
+    };
+
+    row.innerHTML = `
+      <td>${transaction.timestamp.toLocaleDateString('bn-BD', dateOptions)}</td>
+      <td>${transaction.type === 'income' ? 'আয়' : 'খরচ'}</td>
+      <td>${transaction.description || '-'}</td>
+      <td style="color: ${transaction.type === 'income' ? 'green' : 'red'}">
+        ৳${transaction.amount.toLocaleString('bn-BD')}
       </td>
-    </tr>
-  `).join('');
+    `;
+    
+    tbody.appendChild(row);
+  });
 }
+
+// ফিল্টার ক্লিয়ার
+function clearFilters() {
+  document.getElementById('monthFilter').value = '';
+  document.getElementById('dateFilter').value = '';
+  loadAllTransactions();
+}
+
+// সব ট্রানজ্যাকশন লোড
+async function loadAllTransactions() {
+  try {
+    const snapshot = await db.collection('transactions')
+      .where('userId', '==', firebase.auth().currentUser.uid)
+      .orderBy('timestamp', 'desc')
+      .get();
+
+    const transactions = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp.toDate()
+    }));
+
+    renderTransactions(transactions);
+  } catch (error) {
+    console.error("সমস্ত ডেটা লোড করতে সমস্যা:", error);
+  }
+}
+
+// প্রথম লোডে সব ডেটা দেখাবে
+window.onload = () => {
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      loadAllTransactions();
+    } else {
+      window.location.href = '/login'; // লগইন পেজে রিডাইরেক্ট
+    }
+  });
+};
