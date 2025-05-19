@@ -248,3 +248,10 @@ document.addEventListener('DOMContentLoaded', updateCategoryOptions);
 window.logout = () => {
   auth.signOut();
 };
+
+
+
+const setActiveButton = (btn) => {
+  document.querySelectorAll('.filter-buttons button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+};
