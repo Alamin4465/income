@@ -54,16 +54,24 @@ async function loadTransactionsByDate(selectedDateStr) {
     handleError(error, 'তারিখ অনুযায়ী ডেটা লোড করতে সমস্যা!');
   }
 }
-document.getElementById('dateFilter').max = new Date().toISOString().split('T')[0];
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('dateFilter').max = new Date().toISOString().split('T')[0];
 
-document.getElementById('dateFilter').addEventListener('change', e => {
-  loadTransactionsByDate(e.target.value);
-  document.getElementById('monthFilter').value = '';
-});
+  document.getElementById('dateFilter').addEventListener('change', e => {
+    loadTransactionsByDate(e.target.value);
+    document.getElementById('monthFilter').value = '';
+  });
 
-document.getElementById('monthFilter').addEventListener('change', e => {
-  loadTransactionsByMonth(e.target.value);
-  document.getElementById('dateFilter').value = '';
+  document.getElementById('monthFilter').addEventListener('change', e => {
+    loadTransactionsByMonth(e.target.value);
+    document.getElementById('dateFilter').value = '';
+  });
+
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('monthFilter').value = '';
+    loadAllTransactions();
+  });
 });
 firebase.firestore().collection('transactions')
   .where('userId', '==', firebase.auth().currentUser.uid)
