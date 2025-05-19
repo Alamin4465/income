@@ -118,16 +118,4 @@
 
 
 
-<button onclick="runTests()">টেস্ট রান করুন</button>
 
-// টেস্ট ফাংশন
-async function runTests() {
-  const testResults = {
-    user: auth.currentUser?.uid,
-    timestamp: new Date().toISOString(),
-    firestoreConnection: await testFirestoreConnection(),
-    filters: await testFilters()
-  };
-  console.log('টেস্ট রেজাল্ট:', testResults);
-  alert(JSON.stringify(testResults, null, 2));
-}
