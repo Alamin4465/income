@@ -96,17 +96,26 @@ function clearFilters() {
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
   tbody.innerHTML = '';
+  let balance = 0;
+
   data.forEach(t => {
-    const tDate = t.timestamp.toDate().toISOString().split('T')[0];
+    const tDate = t.timestamp.toDate().toLocaleDateString('bn-BD'); // বাংলা তারিখ
+    const income = t.type === 'income' ? Number(t.amount) : 0;
+    const expense = t.type === 'expense' ? Number(t.amount) : 0;
+
+    balance += income - expense;
+
     tbody.innerHTML += `
       <tr>
         <td>${tDate}</td>
         <td>${t.description || ''}</td>
-        <td>${t.type === 'income' ? t.amount : ''}</td>
-        <td>${t.type === 'expense' ? t.amount : ''}</td>
+        <td>${income ? income : ''}</td>
+        <td>${expense ? expense : ''}</td>
+        <td>${balance}</td>
       </tr>
     `;
   });
+}
 }function updateSummary(transactions, isMonthly, prevMonthTx = []) {
   let currentIncome = 0;
   let currentExpense = 0;
