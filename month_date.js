@@ -22,45 +22,49 @@ function loadTransactionsByDate(selectedDateStr) {
     });
 }
 
-document.getElementById('dateFilter').addEventListener('change', function () {
-  loadTransactionsByDate(this.value);
-  document.getElementById('monthFilter').value = '';
-});
+// জাভাস্ক্রিপ্ট অংশ
+function displayTransactions(transactions) {
+  const tbody = document.getElementById('transactionsBody');
+  tbody.innerHTML = ''; // পুরানো ডেটা ক্লিয়ার
 
-document.getElementById('monthFilter').addEventListener('change', function () {
-  loadTransactionsByMonth(this.value);
-  document.getElementById('dateFilter').value = '';
-});
+  transactions.forEach(transaction => {
+    const row = document.createElement('tr');
+    const date = transaction.timestamp.toDate().toLocaleDateString('bn-BD');
+    const amount = transaction.amount.toLocaleString('bn-BD');
+    const type = transaction.type === 'income' ? 'আয়' : 'খরচ';
 
-function clearFilters() {
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('monthFilter').value = '';
-  loadAllTransactions(); // আবার সব ডেটা দেখাও
-}
-const selectedMonth = '2024-05'; // yyyy-mm
-const [year, month] = selectedMonth.split('-');
+    row.innerHTML = `
+      <td>${date}</td>
+      <td>${transaction.description}</td>
+      <td style="color: ${transaction.type === 'income' ? 'green' : 'red'}">৳${amount}</td>
+      <td>${type}</td>
+    `;
 
-// মাসের শুরু
-const start = new Date(year, month - 1, 1);
-start.setHours(0, 0, 0, 0);
-
-// মাসের শেষ
-const end = new Date(year, month, 0); // 0 gives last day of previous month
-end.setHours(23, 59, 59, 999);
-
-db.collection('transactions')
-  .where('userId', '==', currentUser.uid)
-  .where('timestamp', '>=', start)
-  .where('timestamp', '<=', end)
-  .orderBy('timestamp', 'desc')
-  .get()
-  .then(snapshot => {
-    const filtered = [];
-    snapshot.forEach(doc => {
-      filtered.push({ id: doc.id, ...doc.data() });
-    });
-    console.log("Selected month result:", filtered);
+    tbody.appendChild(row);
   });
+}
+
+async function loadAllTransactions() {
+  try {
+    const snapshot = await db.collection('transactions')
+      .where('userId', '==', currentUser.uid)
+      .orderBy('timestamp', 'desc')
+      .get();
+
+    const transactions = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp
+    }));
+
+    displayTransactions(transactions);
+  } catch (error) {
+    console.error("ডেটা লোড করতে সমস্যা:", error);
+  }
+}
+
+// বাকি ফাংশনগুলো আগের মতোই থাকবে (filterByMonth, clearFilters)
+
 
 document.getElementById('dateFilter').addEventListener('change', function () {
   loadTransactionsByDate(this.value);
@@ -77,6 +81,7 @@ function clearFilters() {
   document.getElementById('monthFilter').value = '';
   loadAllTransactions(); // আবার সব ডেটা দেখাও
 }
+
 
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
