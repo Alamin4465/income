@@ -2,14 +2,14 @@ const db = firebase.firestore();
 let transactions = [];
 let currentUser = null;
 
-// Example: Set currentUser when user logs in
+// ইউজার লগইন হলে সেট করো
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
   }
 });
 
-// Filter by Date
+// তারিখ অনুসারে ফিল্টার
 async function filterByDate() {
   const selectedDate = document.getElementById('filterDate').value;
   if (!selectedDate || !currentUser) return;
@@ -27,10 +27,10 @@ async function filterByDate() {
 
   transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   renderTransactions();
-  calculateSummary(); // Only for this day
+  calculateSummary(); // ঐ দিনের জন্য সারাংশ
 }
 
-// Filter by Month
+// মাস অনুসারে ফিল্টার
 async function filterByMonth() {
   const selectedMonth = document.getElementById('filterMonth').value;
   if (selectedMonth === '' || !currentUser) return;
@@ -39,7 +39,7 @@ async function filterByMonth() {
   const start = new Date(year, selectedMonth, 1);
   const end = new Date(year, parseInt(selectedMonth) + 1, 1);
 
-  // Get current month's data
+  // বর্তমান মাসের ডেটা
   const currentSnapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
@@ -49,7 +49,7 @@ async function filterByMonth() {
 
   const currentMonthData = currentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  // Get previous balance
+  // আগের ব্যালেন্স
   const previousSnapshot = await db.collection('transactions')
     .where('userId', '==', currentUser.uid)
     .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(start))
@@ -65,7 +65,7 @@ async function filterByMonth() {
 
   const previousBalance = previousIncome - previousExpense;
 
-  // Display current data
+  // বর্তমান মাসের সারাংশ
   transactions = currentMonthData;
   renderTransactions();
 
@@ -81,19 +81,27 @@ async function filterByMonth() {
   document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
 }
 
+// লেনদেন দেখানোর ফাংশন
 function renderTransactions() {
-  const tableBody = document.getElementById('transactionTableBody');
-  tableBody.innerHTML = '';
+  const container = document.getElementById('transactionsList');
+  container.innerHTML = '';
+
+  if (transactions.length === 0) {
+    container.innerHTML = '<p>কোনো লেনদেন পাওয়া যায়নি।</p>';
+    return;
+  }
 
   transactions.forEach((tx, index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${tx.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-      <td>${tx.category || ''}</td>
-      <td>${tx.amount}</td>
-      <td>${new Date(tx.timestamp?.toDate()).toLocaleDateString('bn-BD')}</td>
+    const entry = document.createElement('div');
+    entry.classList.add('transaction-entry'); // চাইলে CSS দিবেন
+    entry.innerHTML = `
+      <div><strong>${index + 1}.</strong> 
+        ${tx.type === 'income' ? 'আয়' : 'ব্যয়'} | 
+        ক্যাটাগরি: ${tx.category || 'N/A'} | 
+        পরিমাণ: ৳${tx.amount} | 
+        তারিখ: ${tx.timestamp?.toDate ? new Date(tx.timestamp.toDate()).toLocaleDateString('bn-BD') : ''}
+      </div>
     `;
-    tableBody.appendChild(row);
+    container.appendChild(entry);
   });
 }
