@@ -1,164 +1,93 @@
-const db = firebase.firestore();
-const auth = firebase.auth();
-let currentUser = null;
+function loadTransactionsByDate(selectedDateStr) {
+const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd format
+const start = new Date(selectedDate);
+start.setHours(0, 0, 0, 0);
 
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    loadAllTransactions();
-  } else {
-    window.location.href = '/login';
-  }
+const end = new Date(selectedDate);
+end.setHours(23, 59, 59, 999);
+
+db.collection('transactions')
+.where('userId', '==', currentUser.uid)
+.where('timestamp', '>=', start)
+.where('timestamp', '<=', end)
+.orderBy('timestamp', 'desc')
+.get()
+.then(snapshot => {
+const filtered = [];
+snapshot.forEach(doc => {
+filtered.push({ id: doc.id, ...doc.data() });
+});
+renderTable(filtered); // তোমার টেবিলে দেখাও
+updateSummary(filtered, false); // সামারি আপডেট করো
+});
+}
+
+function loadTransactionsByMonth(selectedMonthStr) {
+const [year, month] = selectedMonthStr.split('-');
+
+const start = new Date(year, month - 1, 1);
+start.setHours(0, 0, 0, 0);
+
+const end = new Date(year, month, 0);
+end.setHours(23, 59, 59, 999);
+
+db.collection('transactions')
+.where('userId', '==', currentUser.uid)
+.where('timestamp', '>=', start)
+.where('timestamp', '<=', end)
+.orderBy('timestamp', 'desc')
+.get()
+.then(snapshot => {
+const currentMonthTx = [];
+snapshot.forEach(doc => {
+currentMonthTx.push({ id: doc.id, ...doc.data() });
 });
 
-const formatter = new Intl.NumberFormat('bn-BD', {
-  style: 'currency',
-  currency: 'BDT',
-  minimumFractionDigits: 2
+// আগের মাসের হিসাব আনো  
+  const prevStart = new Date(year, month - 2, 1);  
+  prevStart.setHours(0, 0, 0, 0);  
+  const prevEnd = new Date(year, month - 1, 0);  
+  prevEnd.setHours(23, 59, 59, 999);  
+
+  db.collection('transactions')  
+    .where('userId', '==', currentUser.uid)  
+    .where('timestamp', '>=', prevStart)  
+    .where('timestamp', '<=', prevEnd)  
+    .get()  
+    .then(prevSnapshot => {  
+      const prevMonthTx = [];  
+      prevSnapshot.forEach(doc => {  
+        prevMonthTx.push({ id: doc.id, ...doc.data() });  
+      });  
+
+      renderTable(currentMonthTx);  
+      updateSummary(currentMonthTx, true, prevMonthTx);  
+    });  
 });
 
-function formatDateObj(dateObj) {
-  return `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('dateFilter').max = new Date().toISOString().split('T')[0];
-
-  document.getElementById('dateFilter').addEventListener('change', e => {
-    loadTransactionsByDate(e.target.value);
-    document.getElementById('monthFilter').value = '';
-  });
-
-  document.getElementById('monthFilter').addEventListener('change', e => {
-    loadTransactionsByMonth(e.target.value);
-    document.getElementById('dateFilter').value = '';
-  });
-
-  document.getElementById('clearFilters').addEventListener('click', () => {
-    document.getElementById('dateFilter').value = '';
-    document.getElementById('monthFilter').value = '';
-    loadAllTransactions();
-  });
+document.getElementById('dateFilter').addEventListener('change', function () {
+loadTransactionsByDate(this.value);
+document.getElementById('monthFilter').value = '';
 });
 
-async function loadTransactionsByDate(selectedDateStr) {
-  if (!selectedDateStr) return;
-  try {
-    const selectedDate = new Date(selectedDateStr);
-    const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0);
-    const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59, 999);
+document.getElementById('monthFilter').addEventListener('change', function () {
+loadTransactionsByMonth(this.value);
+document.getElementById('dateFilter').value = '';
+});
 
-    const snapshot = await db.collection('transactions')
-      .where('userId', '==', currentUser.uid)
-      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
-      .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(end))
-      .orderBy('timestamp', 'desc')
-      .get();
-
-    processAndDisplayData(snapshot, false);
-  } catch (error) {
-    handleError(error, 'তারিখ অনুযায়ী ডেটা লোড করতে সমস্যা!');
-  }
-}
-
-async function loadTransactionsByMonth(selectedMonthStr) {
-  if (!selectedMonthStr) return;
-  try {
-    const [year, month] = selectedMonthStr.split('-').map(Number);
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59, 999);
-
-    const currentSnapshot = await getSnapshot(start, end);
-
-    const prevStart = new Date(year, month - 2, 1);
-    const prevEnd = new Date(year, month - 1, 0, 23, 59, 59, 999);
-    const prevSnapshot = await getSnapshot(prevStart, prevEnd);
-
-    processAndDisplayData(currentSnapshot, true, prevSnapshot);
-  } catch (error) {
-    handleError(error, 'মাস অনুযায়ী ডেটা লোড করতে সমস্যা!');
-  }
-}
-
-async function getSnapshot(startDate, endDate) {
-  return await db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
-    .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
-    .orderBy('timestamp', 'desc')
-    .get();
-}
-
-function processAndDisplayData(snapshot, isMonthly, prevSnapshot = null) {
-  const transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  const prevTransactions = prevSnapshot?.docs.map(doc => doc.data()) || [];
-
-  renderTable(transactions);
-  updateSummary(transactions, isMonthly, prevTransactions);
+function clearFilters() {
+document.getElementById('dateFilter').value = '';
+document.getElementById('monthFilter').value = '';
+loadAllTransactions(); // আবার সব ডেটা দেখাও
 }
 
 function renderTable(data) {
-  const tbody = document.querySelector('#transactionTable tbody');
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="5">কোন ডেটা পাওয়া যায়নি</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(t => {
-    const date = formatDateObj(t.timestamp.toDate());
-    const income = t.type === 'income' ? parseFloat(t.amount) || 0 : 0;
-    const expense = t.type === 'expense' ? parseFloat(t.amount) || 0 : 0;
-    const balance = income - expense;
-
-    return `
-      <tr>
-        <td>${date}</td>
-        <td>${t.description || 'N/A'}</td>
-        <td class="income">${formatter.format(income)}</td>
-        <td class="expense">${formatter.format(expense)}</td>
-        <td class="balance">${formatter.format(balance)}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function updateSummary(currentTx, isMonthly, prevTx = []) {
-  const total = txs => txs.reduce((acc, t) => {
-    const amt = parseFloat(t.amount) || 0;
-    t.type === 'income' ? acc.income += amt : acc.expense += amt;
-    return acc;
-  }, { income: 0, expense: 0 });
-
-  const curr = total(currentTx);
-  const prev = isMonthly ? total(prevTx) : null;
-  const prevBalance = prev ? prev.income - prev.expense : 0;
-  const totalBalance = prevBalance + curr.income - curr.expense;
-  const expensePercent = ((curr.expense / curr.income) * 100) || 0;
-
-  document.getElementById('filter_summary').innerHTML = `
-    <div class="summary-card">
-      ${isMonthly ? `<p>পূর্ববর্তী ব্যালেন্স: <b>${formatter.format(prevBalance)}</b></p>` : ''}
-      <p>আয়: <b class="income">${formatter.format(curr.income)}</b></p>
-      <p>ব্যয়: <b class="expense">${formatter.format(curr.expense)}</b> (${expensePercent.toFixed(1)}%)</p>
-      <p>নিট ব্যালেন্স: <b class="balance">${formatter.format(totalBalance)}</b></p>
-    </div>
-  `;
-}
-
-function handleError(error, message) {
-  console.error(error);
-  document.getElementById('filter_summary').innerHTML = `<p class="error">${message}</p>`;
-  document.querySelector('#transactionTable tbody').innerHTML = 
-    '<tr><td colspan="5">ডেটা লোড করতে ব্যর্থ হয়েছে</td></tr>';
-}
-
-async function loadAllTransactions() {
-  try {
-    const snapshot = await db.collection('transactions')
-      .where('userId', '==', currentUser.uid)
-      .orderBy('timestamp', 'desc')
-      .get();
-    processAndDisplayData(snapshot, false);
-  } catch (error) {
-    handleError(error, 'সমস্ত ডেটা লোড করতে সমস্যা!');
-  }
+const tbody = document.querySelector('#transactionTable tbody');
+tbody.innerHTML = '';
+data.forEach(t => {
+const tDate = t.timestamp.toDate().toISOString().split('T')[0];
+tbody.innerHTML +=   <tr>   <td>${tDate}</td>   <td>${t.description || ''}</td>   <td>${t.type === 'income' ? t.amount : ''}</td>   <td>${t.type === 'expense' ? t.amount : ''}</td>   </tr>  ;
+});
 }
