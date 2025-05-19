@@ -1,26 +1,6 @@
-function loadTransactionsByDate(selectedDateStr) {
-  const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd format
-  const start = new Date(selectedDate);
-  start.setHours(0, 0, 0, 0);
+let currentUser = null;
 
-  const end = new Date(selectedDate);
-  end.setHours(23, 59, 59, 999);
-
-  db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .where('timestamp', '>=', start)
-    .where('timestamp', '<=', end)
-    .orderBy('timestamp', 'desc')
-    .get()
-    .then(snapshot => {
-      const filtered = [];
-      snapshot.forEach(doc => {
-        filtered.push({ id: doc.id, ...doc.data() });
-      });
-      renderTable(filtered); // তোমার টেবিলে দেখাও
-      updateSummary(filtered, false); // সামারি আপডেট করো
-    });
-}
+// লগইন ইউজার আইড পাওয়ার পর কল করো
 function loadTransactionsByMonth(selectedMonthStr) {
   const [year, month] = selectedMonthStr.split('-');
 
@@ -64,40 +44,24 @@ function loadTransactionsByMonth(selectedMonthStr) {
         });
     });
 }
-document.getElementById('dateFilter').addEventListener('change', function () {
-  loadTransactionsByDate(this.value);
-  document.getElementById('monthFilter').value = '';
-});
-
-document.getElementById('monthFilter').addEventListener('change', function () {
-  loadTransactionsByMonth(this.value);
-  document.getElementById('dateFilter').value = '';
-});
-
-function clearFilters() {
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('monthFilter').value = '';
-  loadAllTransactions(); // আবার সব ডেটা দেখাও
-}
 
 function updateSummary(data, isMonthly, prevMonthData = []) {
   let income = 0, expense = 0, carry = 0;
   let prevIncome = 0, prevExpense = 0;
 
-  // বর্তমান মাসের আয়/ব্যয় হিসাব
+  // বর্তমান মাসের হিসাব
   data.forEach(t => {
     if (t.type === 'income') income += t.amount;
     else if (t.type === 'expense') expense += t.amount;
   });
 
-  // আগের মাসের আয়/ব্যয় হিসাব
+  // আগের মাসের হিসাব
   if (isMonthly) {
     prevMonthData.forEach(t => {
       if (t.type === 'income') {
         prevIncome += t.amount;
         carry += t.amount;
-      }
-      else if (t.type === 'expense') {
+      } else if (t.type === 'expense') {
         prevExpense += t.amount;
         carry -= t.amount;
       }
@@ -117,11 +81,13 @@ function updateSummary(data, isMonthly, prevMonthData = []) {
     <p><strong>মোট ব্যালেন্স: ${total}</strong></p>
   `;
 }
+
 function renderTable(data) {
   const tbody = document.querySelector('#transactionTable tbody');
   tbody.innerHTML = '';
+
   data.forEach(t => {
-    const tDate = t.timestamp.toDate().toISOString().split('T')[0];
+    const tDate = new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0];
     tbody.innerHTML += `
       <tr>
         <td>${tDate}</td>
@@ -131,4 +97,45 @@ function renderTable(data) {
       </tr>
     `;
   });
+}
+
+// মাস সিলেক্ট করলে কল করো
+document.getElementById('monthFilter').addEventListener('change', function () {
+  const selectedMonth = this.value;
+  if (selectedMonth && currentUser) {
+    loadTransactionsByMonth(selectedMonth);
+  }
+});
+
+// অ্যাকচুয়াল ইউজার লগইন করার পর কল করো
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+  }
+});
+
+function loadTransactionsByDate(selectedDateStr) {
+  const [year, month, day] = selectedDateStr.split('-');
+
+  const start = new Date(year, month - 1, day);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(year, month - 1, day);
+  end.setHours(23, 59, 59, 999);
+
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .where('timestamp', '>=', start)
+    .where('timestamp', '<=', end)
+    .orderBy('timestamp', 'desc')
+    .get()
+    .then(snapshot => {
+      const dailyTx = [];
+      snapshot.forEach(doc => {
+        dailyTx.push({ id: doc.id, ...doc.data() });
+      });
+
+      renderTable(dailyTx);
+      updateSummary(dailyTx, false);
+    });
 }
