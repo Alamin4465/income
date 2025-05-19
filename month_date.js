@@ -30,7 +30,6 @@ function loadTransactionsByMonth(selectedMonthStr) {
 
   const startDate = new Date(year, month - 1, 1);
   startDate.setHours(0, 0, 0, 0);
-
   const endDate = new Date(year, month, 0);
   endDate.setHours(23, 59, 59, 999);
 
@@ -49,8 +48,29 @@ function loadTransactionsByMonth(selectedMonthStr) {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      renderTable(currentMonthTx);
-      updateSummary(currentMonthTx, true);
+      // আগের মাসের ব্যালেন্স আনো
+      const prevStart = new Date(year, month - 2, 1);
+      prevStart.setHours(0, 0, 0, 0);
+      const prevEnd = new Date(year, month - 1, 0);
+      prevEnd.setHours(23, 59, 59, 999);
+
+      const prevStartTS = firebase.firestore.Timestamp.fromDate(prevStart);
+      const prevEndTS = firebase.firestore.Timestamp.fromDate(prevEnd);
+
+      db.collection('transactions')
+        .where('userId', '==', currentUser.uid)
+        .where('timestamp', '>=', prevStartTS)
+        .where('timestamp', '<=', prevEndTS)
+        .get()
+        .then(prevSnapshot => {
+          const prevMonthTx = [];
+          prevSnapshot.forEach(doc => {
+            prevMonthTx.push({ id: doc.id, ...doc.data() });
+          });
+
+          renderTable(currentMonthTx);
+          updateSummary(currentMonthTx, true, prevMonthTx);
+        });
     })
     .catch(error => {
       console.error('Month filter error:', error);
