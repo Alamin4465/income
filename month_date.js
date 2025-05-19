@@ -1,5 +1,5 @@
 function loadTransactionsByDate(selectedDateStr) {
-  const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd ফরম্যাট
+  const selectedDate = new Date(selectedDateStr); // yyyy-mm-dd format
   const start = new Date(selectedDate);
   start.setHours(0, 0, 0, 0);
 
@@ -17,8 +17,11 @@ function loadTransactionsByDate(selectedDateStr) {
       snapshot.forEach(doc => {
         filtered.push({ id: doc.id, ...doc.data() });
       });
-      renderTable(filtered); // টেবিলে ডেটা প্রদর্শন
-      updateSummary(filtered, false); // সামারি আপডেট
+      renderTable(filtered);
+      updateSummary(filtered, false);
+    })
+    .catch(error => {
+      console.error('Date filter error:', error);
     });
 }
 
@@ -43,7 +46,6 @@ function loadTransactionsByMonth(selectedMonthStr) {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      // পূর্ববর্তী মাসের ডেটা অনুসন্ধান
       const prevStart = new Date(year, month - 2, 1);
       prevStart.setHours(0, 0, 0, 0);
       const prevEnd = new Date(year, month - 1, 0);
@@ -62,7 +64,13 @@ function loadTransactionsByMonth(selectedMonthStr) {
 
           renderTable(currentMonthTx);
           updateSummary(currentMonthTx, true, prevMonthTx);
+        })
+        .catch(error => {
+          console.error('Previous month data load error:', error);
         });
+    })
+    .catch(error => {
+      console.error('Month filter error:', error);
     });
 }
 
@@ -79,7 +87,7 @@ document.getElementById('monthFilter').addEventListener('change', function () {
 function clearFilters() {
   document.getElementById('dateFilter').value = '';
   document.getElementById('monthFilter').value = '';
-  loadAllTransactions(); // সমস্ত ডেটা পুনরায় লোড
+  loadAllTransactions(); // সমস্ত ডেটা পুনরায় লোড করো
 }
 
 function renderTable(data) {
@@ -96,4 +104,37 @@ function renderTable(data) {
       </tr>
     `;
   });
+}
+
+function updateSummary(transactions, isMonthly, prevMonthTx = []) {
+  let currentIncome = 0;
+  let currentExpense = 0;
+
+  transactions.forEach(t => {
+    if (t.type === 'income') currentIncome += Number(t.amount);
+    else if (t.type === 'expense') currentExpense += Number(t.amount);
+  });
+
+  let previousBalance = 0;
+
+  if (isMonthly && prevMonthTx.length > 0) {
+    let prevIncome = 0;
+    let prevExpense = 0;
+    prevMonthTx.forEach(t => {
+      if (t.type === 'income') prevIncome += Number(t.amount);
+      else if (t.type === 'expense') prevExpense += Number(t.amount);
+    });
+    previousBalance = prevIncome - prevExpense;
+  }
+
+  const totalBalance = previousBalance + currentIncome - currentExpense;
+
+  document.getElementById('filter_summary').innerHTML = `
+    <div class="summary-box">
+      <p>গত মাসের অবশিষ্ট: <strong>${previousBalance}</strong> টাকা</p>
+      <p>বর্তমান মাসের আয়: <strong>${currentIncome}</strong> টাকা</p>
+      <p>বর্তমান মাসের ব্যয়: <strong>${currentExpense}</strong> টাকা</p>
+      <p>মোট টাকা: <strong>${totalBalance}</strong> টাকা</p>
+    </div>
+  `;
 }
