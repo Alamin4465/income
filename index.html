@@ -80,28 +80,22 @@
 </div>
 <!-- লেনদেন তালিকার নিচে এই কোড যোগ করুন -->
 <div class="filter-section">
-    <h2>বিশেষ ফিল্টার</h2>
-<!-- HTML -->
-<!-- HTML -->
-<input type="month" id="monthFilter" onchange="filterByMonth()">
-<input type="date" id="dateFilter" onchange="filterByDate()">
-<button onclick="clearFilters()">ফিল্টার সরাও</button>
+        <input type="month" id="monthFilter" onchange="filterByMonth()">
+        <input type="date" id="dateFilter" onchange="filterByDate()">
+        <button onclick="clearFilters()">ফিল্টার সরাও</button>
+    </div>
 
-<table id="transactionTable">
-  <thead>
-    <tr>
-      <th>তারিখ</th>
-      <th>ধরণ</th>
-      <th>বিবরণ</th>
-      <th>পরিমাণ</th>
-    </tr>
-  </thead>
-  <tbody id="transactionsBody"></tbody>
-</table>
-  <tbody id="filteredResultsBody"></tbody>
-</table>
-    <div id="filter_summary"></div>
-</div>
+    <table id="transactionTable">
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th>ধরণ</th>
+                <th>বিবরণ</th>
+                <th>পরিমাণ</th>
+            </tr>
+        </thead>
+        <tbody id="transactionsBody"></tbody>
+    </table>
     <!-- চার্ট সেকশন -->
     <div class="chart-container">
         <div class="chart-box">
