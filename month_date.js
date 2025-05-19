@@ -28,16 +28,19 @@ function loadTransactionsByDate(selectedDateStr) {
 function loadTransactionsByMonth(selectedMonthStr) {
   const [year, month] = selectedMonthStr.split('-');
 
-  const start = new Date(year, month - 1, 1);
-  start.setHours(0, 0, 0, 0);
+  const startDate = new Date(year, month - 1, 1);
+  startDate.setHours(0, 0, 0, 0);
 
-  const end = new Date(year, month, 0);
-  end.setHours(23, 59, 59, 999);
+  const endDate = new Date(year, month, 0);
+  endDate.setHours(23, 59, 59, 999);
+
+  const startTimestamp = firebase.firestore.Timestamp.fromDate(startDate);
+  const endTimestamp = firebase.firestore.Timestamp.fromDate(endDate);
 
   db.collection('transactions')
     .where('userId', '==', currentUser.uid)
-    .where('timestamp', '>=', start)
-    .where('timestamp', '<=', end)
+    .where('timestamp', '>=', startTimestamp)
+    .where('timestamp', '<=', endTimestamp)
     .orderBy('timestamp', 'desc')
     .get()
     .then(snapshot => {
@@ -46,28 +49,8 @@ function loadTransactionsByMonth(selectedMonthStr) {
         currentMonthTx.push({ id: doc.id, ...doc.data() });
       });
 
-      const prevStart = new Date(year, month - 2, 1);
-      prevStart.setHours(0, 0, 0, 0);
-      const prevEnd = new Date(year, month - 1, 0);
-      prevEnd.setHours(23, 59, 59, 999);
-
-      db.collection('transactions')
-        .where('userId', '==', currentUser.uid)
-        .where('timestamp', '>=', prevStart)
-        .where('timestamp', '<=', prevEnd)
-        .get()
-        .then(prevSnapshot => {
-          const prevMonthTx = [];
-          prevSnapshot.forEach(doc => {
-            prevMonthTx.push({ id: doc.id, ...doc.data() });
-          });
-
-          renderTable(currentMonthTx);
-          updateSummary(currentMonthTx, true, prevMonthTx);
-        })
-        .catch(error => {
-          console.error('Previous month data load error:', error);
-        });
+      renderTable(currentMonthTx);
+      updateSummary(currentMonthTx, true);
     })
     .catch(error => {
       console.error('Month filter error:', error);
@@ -106,35 +89,3 @@ function renderTable(data) {
   });
 }
 
-function updateSummary(transactions, isMonthly, prevMonthTx = []) {
-  let currentIncome = 0;
-  let currentExpense = 0;
-
-  transactions.forEach(t => {
-    if (t.type === 'income') currentIncome += Number(t.amount);
-    else if (t.type === 'expense') currentExpense += Number(t.amount);
-  });
-
-  let previousBalance = 0;
-
-  if (isMonthly && prevMonthTx.length > 0) {
-    let prevIncome = 0;
-    let prevExpense = 0;
-    prevMonthTx.forEach(t => {
-      if (t.type === 'income') prevIncome += Number(t.amount);
-      else if (t.type === 'expense') prevExpense += Number(t.amount);
-    });
-    previousBalance = prevIncome - prevExpense;
-  }
-
-  const totalBalance = previousBalance + currentIncome - currentExpense;
-
-  document.getElementById('filter_summary').innerHTML = `
-    <div class="summary-box">
-      <p>গত মাসের অবশিষ্ট: <strong>${previousBalance}</strong> টাকা</p>
-      <p>বর্তমান মাসের আয়: <strong>${currentIncome}</strong> টাকা</p>
-      <p>বর্তমান মাসের ব্যয়: <strong>${currentExpense}</strong> টাকা</p>
-      <p>মোট টাকা: <strong>${totalBalance}</strong> টাকা</p>
-    </div>
-  `;
-}
