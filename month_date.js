@@ -1,87 +1,66 @@
-const allTransactions = [
-  { date: '2025-05-01', type: 'income', category: 'বেতন', amount: 10000 },
-  { date: '2025-05-03', type: 'expense', category: 'খাবার', amount: 2000 },
-  { date: '2025-05-10', type: 'income', category: 'ফ্রিল্যান্স', amount: 5000 },
-  { date: '2025-04-28', type: 'income', category: 'পুরাতন', amount: 3000 },
-  { date: '2025-04-29', type: 'expense', category: 'ভাড়া', amount: 1500 },
-];
+// তারিখ অনুযায়ী ফিল্টার
+const filterByDate = () => {
+  const selectedDate = document.getElementById('filterDate').value;
+  if (!selectedDate) return;
 
-function showSpecificDate(dateStr) {
-  const filtered = allTransactions.filter(t => t.date === dateStr);
-  showResult(filtered, 0, `তারিখ: ${dateStr}`);
-}
+  transactions = allTransactions.filter(t => t.date === selectedDate);
+  renderTransactions();
+  calculateSummary();
+};
 
-function showSpecificMonth(monthStr) {
-  if (!monthStr) return;
+// মাস অনুযায়ী ফিল্টার (গত মাসের অবশিষ্ট সহ)
+const filterByMonth = () => {
+  const selectedMonth = parseInt(document.getElementById('filterMonth').value);
+  if (isNaN(selectedMonth)) return;
 
-  const year = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-  const filtered = allTransactions.filter(t => {
-    const d = new Date(t.date);
-    return (String(d.getMonth() + 1).padStart(2, '0') === monthStr && d.getFullYear() === year);
+  // বর্তমান মাসের ট্রানজ্যাকশন
+  transactions = allTransactions.filter(t => {
+    const tDate = new Date(t.date);
+    return tDate.getMonth() === selectedMonth && tDate.getFullYear() === currentYear;
   });
 
-  // আগের মাস হিসাব
-  let prevMonth = parseInt(monthStr) - 1;
-  let prevYear = year;
-  if (prevMonth === 0) {
-    prevMonth = 12;
-    prevYear--;
-  }
+  // পূর্ববর্তী মাসের ব্যালেন্স হিসাব
+  const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
+  const prevYear = selectedMonth === 0 ? currentYear - 1 : currentYear;
 
-  const prevBalance = allTransactions.reduce((acc, t) => {
-    const d = new Date(t.date);
-    const m = d.getMonth() + 1;
-    const y = d.getFullYear();
-    if (m === prevMonth && y === prevYear) {
-      return t.type === 'income' ? acc + t.amount : acc - t.amount;
-    }
-    return acc;
-  }, 0);
-
-  showResult(filtered, prevBalance, `মাস: ${monthStr}`);
-}
-
-function showResult(transactions, prevBalance, label = "") {
-  let income = 0;
-  let expense = 0;
-  let runningBalance = prevBalance;
-
-  const tbody = document.getElementById("filteredResultsBody");
-  const tfoot = document.getElementById("filteredSummary");
-  tbody.innerHTML = '';
-  tfoot.innerHTML = '';
-
-  if (transactions.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5">কোন ডেটা পাওয়া যায়নি</td></tr>`;
-    return;
-  }
-
-  transactions.forEach(t => {
-    if (t.type === 'income') income += t.amount;
-    else expense += t.amount;
-
-    runningBalance += t.type === 'income' ? t.amount : -t.amount;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${t.date}</td>
-        <td>${t.type === 'income' ? 'আয়' : 'ব্যয়'}</td>
-        <td>${t.category}</td>
-        <td>৳ ${t.amount}</td>
-        <td>৳ ${runningBalance}</td>
-      </tr>
-    `;
+  const prevMonthTransactions = allTransactions.filter(t => {
+    const tDate = new Date(t.date);
+    return tDate.getMonth() === prevMonth && tDate.getFullYear() === prevYear;
   });
 
-  const net = prevBalance + income - expense;
+  const prevIncome = prevMonthTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  tfoot.innerHTML = `
-    <tr>
-      <td colspan="2"><strong>${label} সারাংশ</strong></td>
-      <td><strong>আয়: ৳${income}</strong></td>
-      <td><strong>ব্যয়: ৳${expense}</strong></td>
-      <td><strong>মোট: ৳${net}</strong></td>
-    </tr>
-  `;
-}
+  const prevExpense = prevMonthTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const carryForward = prevIncome - prevExpense;
+
+  // সামারি গণনা আপডেট
+  calculateSummaryWithCarryForward(carryForward);
+  renderTransactions();
+};
+
+// Carry Forward সহ সামারি আপডেট
+const calculateSummaryWithCarryForward = (carryForward = 0) => {
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalBalance = carryForward + totalIncome - totalExpense;
+  const savingsRate = totalIncome > 0 ? ((totalBalance / totalIncome) * 100).toFixed(1) : 0;
+
+  document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+  document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+  document.getElementById('total-balance').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+  document.getElementById('savingsRate').textContent = `${savingsRate}%`;
+  document.getElementById('savingsAmount').textContent = `৳ ${totalBalance.toLocaleString('bn-BD')}`;
+};
