@@ -1,4 +1,5 @@
 
+let allTransactions = [];
 let transactions = [];
 
 // ইউজার লগইন স্টেট চেক করুন
@@ -12,21 +13,34 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-const loadTransactions = (filter = 'all') => {
-  let query = db.collection('transactions')
-    .where('userId', '==', currentUser.uid)
-    .orderBy('timestamp', 'desc');
 
-  query.onSnapshot(snapshot => {
-    transactions = [];
-    snapshot.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      if (filter === 'all' || data.type === filter) {
-        transactions.push(data);
-      }
+
+const loadTransactions = () => {
+  db.collection('transactions')
+    .where('userId', '==', currentUser.uid)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot((snapshot) => {
+      allTransactions = [];
+      snapshot.forEach(doc => {
+        allTransactions.push({ id: doc.id, ...doc.data() });
+      });
+
+      // সব ডাটা দিয়ে সামারি ও চার্ট আপডেট
+      updateSummaryAndCharts();
+
+      // শুরুতে সকল টেবিল দেখাও
+      filterTable('all');
     });
-    updateUI();
-  });
+};
+
+// শুধুমাত্র টেবিল ফিল্টার (UI তে আয়/ব্যয়/সকল দেখানোর জন্য)
+const filterTable = (filterType) => {
+  if (filterType === 'all') {
+    transactions = [...allTransactions];
+  } else {
+    transactions = allTransactions.filter(t => t.type === filterType);
+  }
+  renderTransactions();
 };
 
 document.getElementById('transactionForm').addEventListener('submit', async (e) => {
@@ -37,7 +51,7 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     alert("ইউজার লগইন করা নেই!");
     return;
   }
-
+//from 
   const transaction = {
     date: document.getElementById('date').value,
     type: document.getElementById('type').value,
@@ -55,6 +69,10 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     alert("লেনদেন জমা দিতে সমস্যা হচ্ছে: " + error.message);
   }
 });
+const updateSummaryAndCharts = () => {
+  calculateSummary(); // allTransactions ব্যবহার করবে
+  updateCharts();     // allTransactions ব্যবহার করবে
+};
 
 // UI আপডেট ফাংশন
 const updateUI = () => {
